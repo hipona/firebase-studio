@@ -284,7 +284,6 @@ export default function Home() {
                     <div className="flex flex-wrap gap-1 mb-2">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
-                          
                           <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">{day}</Badge>
                         ))
                       ) : (
