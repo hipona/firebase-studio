@@ -44,6 +44,7 @@ export default function Home() {
   const [newTime, setNewTime] = useState('');
   const [newDays, setNewDays] = useState<string[]>([]);
   const {toast} = useToast();
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     const schedulesRef = ref(db, 'horarios');
@@ -74,22 +75,8 @@ export default function Home() {
   };
 
   const handleAddSchedule = async () => {
-
-    if (newDays.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'Por favor, selecciona al menos un día para el horario.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!newTime) {
-      toast({
-        title: 'Error',
-        description: 'Por favor, introduce una hora válida.',
-        variant: 'destructive',
-      });
+    if (newDays.length === 0 || !newTime) {
+      setShowAlert(true);
       return;
     }
 
@@ -217,6 +204,24 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <h1 className="text-2xl font-bold mb-4">AquaSchedule</h1>
+
+      {/* Alert Dialog for missing time and days */}
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogDescription>
+              Por favor, selecciona al menos un día y una hora para crear el horario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowAlert(false)}>
+              Aceptar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Añadir Nuevo Horario</CardTitle>
