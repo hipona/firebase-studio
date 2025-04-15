@@ -191,7 +191,6 @@ export default function Home() {
 
   return (
     <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-2xl font-bold mb-4">AquaSchedule</h1>
 
       {/* Alert Dialog for missing time and days */}
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
@@ -309,3 +308,4 @@ export default function Home() {
     </div>
   );
 }
+
