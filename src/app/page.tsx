@@ -7,16 +7,25 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
-import {toast} from '@/hooks/use-toast';
 import {useToast} from '@/hooks/use-toast';
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog"
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Badge} from "@/components/ui/badge";
-import {Trash} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import {Badge} from '@/components/ui/badge';
+import {Trash} from 'lucide-react';
 
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, update, remove, push } from 'firebase/database';
-import {format} from "date-fns";
+import {initializeApp} from 'firebase/app';
+import {getDatabase, ref, onValue, update, remove, push} from 'firebase/database';
+import {format, parse} from 'date-fns';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -47,7 +56,7 @@ export default function Home() {
 
   useEffect(() => {
     const schedulesRef = ref(db, 'horarios');
-    onValue(schedulesRef, (snapshot) => {
+    onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
       if (data) {
         const schedulesList: Schedule[] = Object.entries(data).map(([key, value]) => ({
@@ -64,9 +73,9 @@ export default function Home() {
   }, []);
 
   const handleDayToggle = (day: string) => {
-    setNewDays((prevDays) => {
+    setNewDays(prevDays => {
       if (prevDays.includes(day)) {
-        return prevDays.filter((d) => d !== day);
+        return prevDays.filter(d => d !== day);
       } else {
         return [...prevDays, day];
       }
@@ -83,6 +92,24 @@ export default function Home() {
       return;
     }
 
+    // Check for time conflicts within a 1-minute range
+    const newScheduleTime = parse(newTime, 'HH:mm', new Date());
+    for (const schedule of schedules) {
+      const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
+      const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
+
+      if (timeDifference <= 60000) {
+        // 60000 milliseconds = 1 minute
+        toast({
+          title: 'Error',
+          description:
+            'El nuevo horario está demasiado cerca de un horario existente.  Por favor, elige una hora con al menos un minuto de diferencia.',
+          variant: 'destructive',
+        });
+        return; // Exit the function to prevent adding the schedule
+      }
+    }
+
     const newSchedule: Schedule = {
       id: '', // El ID será generado por Firebase
       time: newTime,
@@ -95,7 +122,7 @@ export default function Home() {
       push(schedulesRef, {
         time: newSchedule.time,
         days: newSchedule.days,
-        status: newSchedule.status
+        status: newSchedule.status,
       });
 
       toast({
@@ -116,23 +143,23 @@ export default function Home() {
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
 
-    update(scheduleRef, { status: !currentStatus })
+    update(scheduleRef, {status: !currentStatus})
       .then(() => {
-        setSchedules((prevSchedules) =>
-          prevSchedules.map((schedule) =>
+        setSchedules(prevSchedules =>
+          prevSchedules.map(schedule =>
             schedule.id === id ? {...schedule, status: !schedule.status} : schedule
           )
         );
         toast({
-          title: "Éxito",
-          description: "Estado del horario actualizado correctamente.",
+          title: 'Éxito',
+          description: 'Estado del horario actualizado correctamente.',
         });
       })
-      .catch((error) => {
+      .catch(error => {
         toast({
-          title: "Error",
-          description: "Fallo al actualizar el estado del horario: " + error.message,
-          variant: "destructive",
+          title: 'Error',
+          description: 'Fallo al actualizar el estado del horario: ' + error.message,
+          variant: 'destructive',
         });
       });
   };
@@ -142,38 +169,38 @@ export default function Home() {
     remove(scheduleRef)
       .then(() => {
         toast({
-          title: "Éxito",
-          description: "Horario eliminado exitosamente.",
+          title: 'Éxito',
+          description: 'Horario eliminado exitosamente.',
         });
       })
-      .catch((error) => {
+      .catch(error => {
         toast({
-          title: "Error",
-          description: "Fallo al eliminar el horario: " + error.message,
-          variant: "destructive",
+          title: 'Error',
+          description: 'Fallo al eliminar el horario: ' + error.message,
+          variant: 'destructive',
         });
       });
   };
 
   const handleUpdateSchedule = (id: string, updatedTime: string, updatedDays: string[]) => {
     const scheduleRef = ref(db, `horarios/${id}`);
-    update(scheduleRef, { time: updatedTime, days: updatedDays })
+    update(scheduleRef, {time: updatedTime, days: updatedDays})
       .then(() => {
-        setSchedules((prevSchedules) =>
-          prevSchedules.map((schedule) =>
+        setSchedules(prevSchedules =>
+          prevSchedules.map(schedule =>
             schedule.id === id ? {...schedule, time: updatedTime, days: updatedDays} : schedule
           )
         );
         toast({
-          title: "Éxito",
-          description: "Horario actualizado exitosamente.",
+          title: 'Éxito',
+          description: 'Horario actualizado exitosamente.',
         });
       })
-      .catch((error) => {
+      .catch(error => {
         toast({
-          title: "Error",
-          description: "Fallo al actualizar el horario: " + error.message,
-          variant: "destructive",
+          title: 'Error',
+          description: 'Fallo al actualizar el horario: ' + error.message,
+          variant: 'destructive',
         });
       });
   };
@@ -193,13 +220,13 @@ export default function Home() {
               id="time"
               type="time"
               value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
+              onChange={e => setNewTime(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
             <Label>Días</Label>
             <div className="flex flex-wrap gap-2">
-              {daysOfWeek.map((day) => (
+              {daysOfWeek.map(day => (
                 <Button
                   key={day}
                   variant={newDays.includes(day) ? 'default' : 'outline'}
@@ -221,25 +248,42 @@ export default function Home() {
           <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
         ) : (
           <div className="grid gap-4">
-            {schedules.map((schedule) => (
+            {schedules.map(schedule => (
               <Card key={schedule.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
+                  <CardTitle style={{color: schedule.status ? 'green' : 'red'}}>
                     {schedule.time}
                   </CardTitle>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDeleteSchedule(schedule.id)}
-                  >
-                    <Trash className="h-4 w-4"/>
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
+                          proceder?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteSchedule(schedule.id)}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </CardHeader>
                 <CardContent>
                   {schedule.days && schedule.days.length > 0 ? (
                     <div className="flex flex-wrap gap-1 mb-2">
                       {schedule.days.map(day => (
-                        <Badge key={day} variant="secondary">{day}</Badge>
+                        <Badge key={day} variant="secondary">
+                          {day}
+                        </Badge>
                       ))}
                     </div>
                   ) : (
