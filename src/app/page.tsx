@@ -167,6 +167,7 @@ export default function Home() {
             <Label htmlFor="time">Time (e.g., 19:00)</Label>
             <Input
               id="time"
+              type="time"
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
             />
@@ -242,4 +243,3 @@ export default function Home() {
     </div>
   );
 }
-
