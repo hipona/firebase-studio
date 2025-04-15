@@ -8,7 +8,7 @@ import {Label} from '@/components/ui/label';
 import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
 import {useToast} from '@/hooks/use-toast';
-import {Trash} from 'lucide-react';
+import {Trash, Calendar, Moon, Sun} from 'lucide-react';
 import {Badge} from '@/components/ui/badge'; // Import Badge
 
 import {initializeApp} from 'firebase/app';
@@ -99,14 +99,15 @@ export default function Home() {
     }
 
     const schedulesRef = ref(db, 'horarios');
+    const newScheduleRef = push(schedulesRef);
+    const newScheduleKey = newScheduleRef.key; // Get the key of the new schedule
 
     try {
-      await push(schedulesRef, {
+      await update(ref(db, `horarios/${newScheduleKey}`), {
         time: newTime,
         days: newDays,
         status: true,
       });
-
       toast({
         title: 'Éxito',
         description: 'Horario añadido exitosamente.',
@@ -283,7 +284,8 @@ export default function Home() {
                     <div className="flex flex-wrap gap-1 mb-2">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
-                          <Badge key={day} variant="secondary">{day}</Badge>
+                          
+                          <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">{day}</Badge>
                         ))
                       ) : (
                         <p className="text-sm text-muted-foreground">Días: No especificado</p>
@@ -308,4 +310,3 @@ export default function Home() {
     </div>
   );
 }
-
