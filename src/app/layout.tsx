@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <header className="bg-secondary text-secondary-foreground p-4 flex items-center justify-center">
+        <header className="fixed top-0 left-0 w-full bg-secondary text-secondary-foreground p-4 flex items-center justify-center z-10">
           <Calendar className="mr-2" />
           <h1 className="text-xl font-bold">Planer</h1>
         </header>
@@ -44,7 +44,9 @@ export default function RootLayout({
         >
           {isDarkMode ? <Sun /> : <Moon />}
         </button>
-        {children}
+        <div style={{marginTop: '60px'}}>
+          {children}
+        </div>
         <footer className="bg-secondary text-secondary-foreground p-4 text-center">
           Realizado por Mideas Sistemas
         </footer>
@@ -52,3 +54,4 @@ export default function RootLayout({
     </html>
   );
 }
+
