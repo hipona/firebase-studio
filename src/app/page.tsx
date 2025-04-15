@@ -39,7 +39,7 @@ export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTime, setNewTime] = useState('');
   const [newDays, setNewDays] = useState<string[]>([]);
-
+    const [scheduleCounter, setScheduleCounter] = useState(1); // Counter for schedule IDs
   const {toast} = useToast();
 
     useEffect(() => {
@@ -70,43 +70,45 @@ export default function Home() {
     });
   };
 
-  const handleAddSchedule = () => {
-    if (!newTime) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid time.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    const handleAddSchedule = () => {
+        if (!newTime) {
+            toast({
+                title: 'Error',
+                description: 'Please enter a valid time.',
+                variant: 'destructive',
+            });
+            return;
+        }
 
-    const newSchedule: Schedule = {
-      id: Date.now().toString(),
-      time: newTime,
-      days: newDays,
-      status: true,
+        const scheduleId = `horario_${scheduleCounter}`;
+        const newSchedule: Schedule = {
+            id: scheduleId,
+            time: newTime,
+            days: newDays,
+            status: true,
+        };
+
+        const schedulesRef = ref(db, 'schedules/' + newSchedule.id);
+        update(schedulesRef, {
+            time: newSchedule.time,
+            days: newSchedule.days,
+            status: newSchedule.status
+        }).then(() => {
+            toast({
+                title: 'Success',
+                description: 'Schedule added successfully.',
+            });
+            setNewTime('');
+            setNewDays([]);
+            setScheduleCounter(prevCounter => prevCounter + 1); // Increment the counter
+        }).catch((error) => {
+            toast({
+                title: 'Error',
+                description: 'Failed to add schedule: ' + error.message,
+                variant: 'destructive',
+            });
+        });
     };
-
-      const schedulesRef = ref(db, 'schedules/' + newSchedule.id);
-      update(schedulesRef, {
-          time: newSchedule.time,
-          days: newSchedule.days,
-          status: newSchedule.status
-      }).then(() => {
-          toast({
-              title: 'Success',
-              description: 'Schedule added successfully.',
-          });
-          setNewTime('');
-          setNewDays([]);
-      }).catch((error) => {
-          toast({
-              title: 'Error',
-              description: 'Failed to add schedule: ' + error.message,
-              variant: 'destructive',
-          });
-      });
-  };
 
   const handleStatusToggle = (id: string) => {
       const scheduleRef = ref(db, `schedules/${id}/status`);
