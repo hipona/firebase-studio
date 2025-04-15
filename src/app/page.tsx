@@ -9,11 +9,14 @@ import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
 import {useToast} from '@/hooks/use-toast';
 import {Trash} from 'lucide-react';
+import {Badge} from '@/components/ui/badge'; // Import Badge
 
 import {initializeApp} from 'firebase/app';
 import {getDatabase, ref, onValue, update, remove, push} from 'firebase/database';
 import {format, parse} from 'date-fns';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -111,19 +114,24 @@ export default function Home() {
       }
     }
 
-    const newSchedule: Schedule = {
-      id: '', // El ID será generado por Firebase
-      time: newTime,
-      days: newDays,
-      status: true,
-    };
-
     const schedulesRef = ref(db, 'horarios');
+    const newScheduleRef = push(schedulesRef); // Generate a new unique key
+    const newScheduleKey = newScheduleRef.key; // Get the key
+
+    if (!newScheduleKey) {
+      toast({
+        title: 'Error',
+        description: 'Fallo al generar el ID del horario.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      push(schedulesRef, {
-        time: newSchedule.time,
-        days: newSchedule.days,
-        status: newSchedule.status,
+      await update(ref(db, `horarios/${newScheduleKey}`), {
+        time: newTime,
+        days: newDays,
+        status: true,
       });
 
       toast({
