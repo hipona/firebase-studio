@@ -12,9 +12,10 @@ import {useToast} from '@/hooks/use-toast';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog"
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Badge} from "@/components/ui/badge";
+import {Trash} from "lucide-react";
 
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, update, remove, push, increment } from 'firebase/database';
+import { getDatabase, ref, onValue, update, remove, push } from 'firebase/database';
 import {format} from "date-fns";
 
 const firebaseConfig = {
@@ -45,7 +46,7 @@ export default function Home() {
   const {toast} = useToast();
 
   useEffect(() => {
-    const schedulesRef = ref(db, 'schedules');
+    const schedulesRef = ref(db, 'horarios');
     onValue(schedulesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -89,9 +90,9 @@ export default function Home() {
       status: true,
     };
 
-    const schedulesRef = ref(db, 'schedules');
+    const schedulesRef = ref(db, 'horarios');
     try {
-      const newScheduleRef = push(schedulesRef, {
+      push(schedulesRef, {
         time: newSchedule.time,
         days: newSchedule.days,
         status: newSchedule.status
@@ -113,7 +114,7 @@ export default function Home() {
   };
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
-    const scheduleRef = ref(db, `schedules/${id}`);
+    const scheduleRef = ref(db, `horarios/${id}`);
 
     update(scheduleRef, { status: !currentStatus })
       .then(() => {
@@ -137,7 +138,7 @@ export default function Home() {
   };
 
   const handleDeleteSchedule = (id: string) => {
-    const scheduleRef = ref(db, `schedules/${id}`);
+    const scheduleRef = ref(db, `horarios/${id}`);
     remove(scheduleRef)
       .then(() => {
         toast({
@@ -155,7 +156,7 @@ export default function Home() {
   };
 
   const handleUpdateSchedule = (id: string, updatedTime: string, updatedDays: string[]) => {
-    const scheduleRef = ref(db, `schedules/${id}`);
+    const scheduleRef = ref(db, `horarios/${id}`);
     update(scheduleRef, { time: updatedTime, days: updatedDays })
       .then(() => {
         setSchedules((prevSchedules) =>
@@ -226,19 +227,13 @@ export default function Home() {
                   <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
                     {schedule.time}
                   </CardTitle>
-                  <Select onValueChange={(value) => {
-                    if (value === "delete") {
-                      handleDeleteSchedule(schedule.id);
-                    }
-                  }}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Acciones" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="edit">Modificar</SelectItem>
-                      <SelectItem value="delete">Eliminar</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteSchedule(schedule.id)}
+                  >
+                    <Trash className="h-4 w-4"/>
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {schedule.days && schedule.days.length > 0 ? (
