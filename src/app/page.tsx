@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Input} from '@/components/ui/input';
@@ -10,6 +10,21 @@ import {Separator} from '@/components/ui/separator';
 import {toast} from '@/hooks/use-toast';
 import {useToast} from '@/hooks/use-toast';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog"
+
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, update, remove } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 type Schedule = {
   id: string;
@@ -26,6 +41,24 @@ export default function Home() {
   const [newDays, setNewDays] = useState<string[]>([]);
 
   const {toast} = useToast();
+
+    useEffect(() => {
+        const schedulesRef = ref(db, 'schedules');
+        onValue(schedulesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const schedulesList: Schedule[] = Object.entries(data).map(([key, value]) => ({
+                    id: key,
+                    time: value.time,
+                    days: value.days,
+                    status: value.status,
+                }));
+                setSchedules(schedulesList);
+            } else {
+                setSchedules([]);
+            }
+        });
+    }, []);
 
   const handleDayToggle = (day: string) => {
     setNewDays((prevDays) => {
@@ -54,32 +87,69 @@ export default function Home() {
       status: true,
     };
 
-    setSchedules([...schedules, newSchedule]);
-    setNewTime('');
-    setNewDays([]);
-
-    toast({
-      title: 'Success',
-      description: 'Schedule added successfully.',
-    });
+      const schedulesRef = ref(db, 'schedules/' + newSchedule.id);
+      update(schedulesRef, {
+          time: newSchedule.time,
+          days: newSchedule.days,
+          status: newSchedule.status
+      }).then(() => {
+          toast({
+              title: 'Success',
+              description: 'Schedule added successfully.',
+          });
+          setNewTime('');
+          setNewDays([]);
+      }).catch((error) => {
+          toast({
+              title: 'Error',
+              description: 'Failed to add schedule: ' + error.message,
+              variant: 'destructive',
+          });
+      });
   };
 
   const handleStatusToggle = (id: string) => {
-    setSchedules((prevSchedules) =>
-      prevSchedules.map((schedule) =>
-        schedule.id === id ? {...schedule, status: !schedule.status} : schedule
-      )
-    );
+      const scheduleRef = ref(db, `schedules/${id}/status`);
+      const schedule = schedules.find(schedule => schedule.id === id);
+
+      if (schedule) {
+          const newStatus = !schedule.status;
+          update(scheduleRef, newStatus).then(() => {
+              setSchedules((prevSchedules) =>
+                  prevSchedules.map((schedule) =>
+                      schedule.id === id ? {...schedule, status: newStatus} : schedule
+                  )
+              );
+              toast({
+                  title: "Success",
+                  description: "Schedule status updated successfully.",
+              });
+          }).catch((error) => {
+              toast({
+                  title: "Error",
+                  description: "Failed to update schedule status: " + error.message,
+                  variant: "destructive",
+              });
+          });
+      }
   };
 
     const handleDeleteSchedule = (id: string) => {
-        setSchedules((prevSchedules) =>
-            prevSchedules.filter((schedule) => schedule.id !== id)
-        );
-        toast({
-            title: "Success",
-            description: "Schedule deleted successfully.",
-        });
+        const scheduleRef = ref(db, `schedules/${id}`);
+        remove(scheduleRef)
+            .then(() => {
+                toast({
+                    title: "Success",
+                    description: "Schedule deleted successfully.",
+                });
+            })
+            .catch((error) => {
+                toast({
+                    title: "Error",
+                    description: "Failed to delete schedule: " + error.message,
+                    variant: "destructive",
+                });
+            });
     };
 
   return (
