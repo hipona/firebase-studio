@@ -8,24 +8,12 @@ import {Label} from '@/components/ui/label';
 import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
 import {useToast} from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Badge} from '@/components/ui/badge';
 import {Trash} from 'lucide-react';
 
 import {initializeApp} from 'firebase/app';
 import {getDatabase, ref, onValue, update, remove, push} from 'firebase/database';
 import {format, parse} from 'date-fns';
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -83,6 +71,16 @@ export default function Home() {
   };
 
   const handleAddSchedule = async () => {
+
+    if (newDays.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Por favor, selecciona al menos un día para el horario.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!newTime) {
       toast({
         title: 'Error',
