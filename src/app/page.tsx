@@ -100,6 +100,9 @@ export default function Home() {
 
       if (timeDifference <= 60000) {
         // 60000 milliseconds = 1 minute
+        alert(
+          'El nuevo horario está demasiado cerca de un horario existente.  Por favor, elige una hora con al menos un minuto de diferencia.'
+        );
         toast({
           title: 'Error',
           description:
