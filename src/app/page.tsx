@@ -52,7 +52,7 @@ export default function Home() {
         const schedulesList: Schedule[] = Object.entries(data).map(([key, value]) => ({
           id: key,
           time: value.time,
-          days: value.days,
+          days: value.days || [],
           status: value.status,
         }));
         setSchedules(schedulesList);
@@ -89,35 +89,13 @@ export default function Home() {
       status: true,
     };
 
-    const counterRef = ref(db, 'scheduleCounter/count');
+    const schedulesRef = ref(db, 'schedules');
     try {
-      // 1. Obtener el valor actual del contador
-      const snapshot = await new Promise((resolve) => {
-        onValue(counterRef, (snapshot) => {
-          resolve(snapshot);
-        }, {
-          onlyOnce: true // Para que onValue se ejecute solo una vez
-        });
-      });
-
-      let currentCount = snapshot.val();
-
-      // Si el contador no existe, inicializarlo en 0
-      if (currentCount === null) {
-        currentCount = 0;
-      }
-
-      // 2. Crear el nuevo horario con el ID incrementado
-      const newScheduleRef = ref(db, `schedules/horario_${currentCount + 1}`);
-
-      await update(newScheduleRef, {
+      const newScheduleRef = push(schedulesRef, {
         time: newSchedule.time,
         days: newSchedule.days,
         status: newSchedule.status
       });
-
-      // 3. Incrementar el contador
-      await update(counterRef, increment(1));
 
       toast({
         title: 'Éxito',
