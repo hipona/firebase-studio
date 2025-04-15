@@ -37,13 +37,13 @@ export default function RootLayout({
         <header className="fixed top-0 left-0 w-full bg-secondary text-secondary-foreground p-4 flex items-center justify-center z-10">
           <Calendar className="mr-2" />
           <h1 className="text-xl font-bold">Planer</h1>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="absolute top-2 right-2 bg-secondary text-secondary-foreground p-2 rounded-full"
+          >
+            {isDarkMode ? <Sun /> : <Moon />}
+          </button>
         </header>
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="fixed top-4 right-4 bg-secondary text-secondary-foreground p-2 rounded-full"
-        >
-          {isDarkMode ? <Sun /> : <Moon />}
-        </button>
         <div style={{marginTop: '60px'}}>
           {children}
         </div>
@@ -54,4 +54,3 @@ export default function RootLayout({
     </html>
   );
 }
-
