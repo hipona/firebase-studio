@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
+import {Calendar} from 'lucide-react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,6 +26,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <header className="bg-secondary text-secondary-foreground p-4 flex items-center justify-center">
+          <Calendar className="mr-2" />
+          <h1 className="text-xl font-bold">Planer</h1>
+        </header>
         {children}
         <footer className="bg-secondary text-secondary-foreground p-4 text-center">
           Realizado por Mideas Sistemas
