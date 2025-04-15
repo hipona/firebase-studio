@@ -99,20 +99,9 @@ export default function Home() {
     }
 
     const schedulesRef = ref(db, 'horarios');
-    const newScheduleRef = push(schedulesRef); // Generate a new unique key
-    const newScheduleKey = newScheduleRef.key; // Get the key
-
-    if (!newScheduleKey) {
-      toast({
-        title: 'Error',
-        description: 'Fallo al generar el ID del horario.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     try {
-      await update(ref(db, `horarios/${newScheduleKey}`), {
+      await push(schedulesRef, {
         time: newTime,
         days: newDays,
         status: true,
