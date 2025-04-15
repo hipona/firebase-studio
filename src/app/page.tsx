@@ -88,9 +88,6 @@ export default function Home() {
 
       if (timeDifference <= 60000) {
         // 60000 milliseconds = 1 minute
-        alert(
-          'El nuevo horario está demasiado cerca de un horario existente.  Por favor, elige una hora con al menos un minuto de diferencia.'
-        );
         toast({
           title: 'Error',
           description:
@@ -168,6 +165,7 @@ export default function Home() {
           title: 'Éxito',
           description: 'Horario eliminado exitosamente.',
         });
+        setSchedules(prevSchedules => prevSchedules.filter(schedule => schedule.id !== id));
       })
       .catch(error => {
         toast({
@@ -178,31 +176,32 @@ export default function Home() {
       });
   };
 
-  const handleUpdateSchedule = (id: string, updatedTime: string, updatedDays: string[]) => {
-    const scheduleRef = ref(db, `horarios/${id}`);
-    update(scheduleRef, {time: updatedTime, days: updatedDays})
-      .then(() => {
-        setSchedules(prevSchedules =>
-          prevSchedules.map(schedule =>
-            schedule.id === id ? {...schedule, time: updatedTime, days: updatedDays} : schedule
-          )
-        );
-        toast({
-          title: 'Éxito',
-          description: 'Horario actualizado exitosamente.',
-        });
-      })
-      .catch(error => {
-        toast({
-          title: 'Error',
-          description: 'Fallo al actualizar el horario: ' + error.message,
-          variant: 'destructive',
-        });
+  const handleUpdateSchedule = async (id: string, updatedTime: string, updatedDays: string[]) => {
+    try {
+      const scheduleRef = ref(db, `horarios/${id}`);
+      await update(scheduleRef, { time: updatedTime, days: updatedDays });
+  
+      setSchedules(prevSchedules =>
+        prevSchedules.map(schedule =>
+          schedule.id === id ? { ...schedule, time: updatedTime, days: updatedDays } : schedule
+        )
+      );
+  
+      toast({
+        title: 'Éxito',
+        description: 'Horario actualizado exitosamente.',
       });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Fallo al actualizar el horario: ' + error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+    <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
       <h1 className="text-2xl font-bold mb-4">AquaSchedule</h1>
 
       {/* Alert Dialog for missing time and days */}
@@ -268,6 +267,7 @@ export default function Home() {
                   <CardTitle style={{color: schedule.status ? 'green' : 'red'}}>
                     {schedule.time}
                   </CardTitle>
+                  
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm">
@@ -292,17 +292,15 @@ export default function Home() {
                   </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                  {schedule.days && schedule.days.length > 0 ? (
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {schedule.days.map(day => (
-                        <Badge key={day} variant="secondary">
-                          {day}
-                        </Badge>
-                      ))}
+                      {schedule.days && schedule.days.length > 0 ? (
+                        schedule.days.map(day => (
+                          <Badge key={day} variant="secondary">{day}</Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Días: No especificado</p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Días: No especificado</p>
-                  )}
                   <div className="flex items-center space-x-2 mt-2">
                     <Label htmlFor={`status-${schedule.id}`}>
                       {schedule.status ? 'Prende' : 'Apaga'}
