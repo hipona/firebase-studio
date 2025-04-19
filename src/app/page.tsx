@@ -12,7 +12,7 @@ import {Trash, Calendar, Moon, Sun} from 'lucide-react';
 import {Badge} from '@/components/ui/badge'; // Import Badge
 
 import {initializeApp} from 'firebase/app';
-import {getDatabase, ref, onValue, update, remove, push} from 'firebase/database';
+import {getDatabase, ref, onValue, set, remove, get} from 'firebase/database';
 import {format, parse} from 'date-fns';
 import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
@@ -74,6 +74,34 @@ export default function Home() {
     });
   };
 
+  const getNextScheduleId = async () => {
+    const schedulesRef = ref(db, 'horarios');
+    const snapshot = await get(schedulesRef);
+    const data = snapshot.val();
+    
+    if (!data) {
+      return 'horario_1';
+    }
+    
+    // Extract all existing schedule IDs
+    const scheduleIds = Object.keys(data);
+    
+    // Filter for ids that match the pattern "horario_X" where X is a number
+    const numericIds = scheduleIds
+      .filter(id => id.startsWith('horario_'))
+      .map(id => {
+        const numPart = id.split('_')[1];
+        return parseInt(numPart, 10);
+      })
+      .filter(num => !isNaN(num));
+      
+    // Find the maximum number
+    const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+    
+    // Create the next ID
+    return `horario_${maxId + 1}`;
+  };
+
   const handleAddSchedule = async () => {
     if (newDays.length === 0 || !newTime) {
       setShowAlert(true);
@@ -91,26 +119,30 @@ export default function Home() {
         toast({
           title: 'Error',
           description:
-            'El nuevo horario está demasiado cerca de un horario existente.  Por favor, elige una hora con al menos un minuto de diferencia.',
+            'El nuevo horario está demasiado cerca de un horario existente. Por favor, elige una hora con al menos un minuto de diferencia.',
           variant: 'destructive',
         });
         return; // Exit the function to prevent adding the schedule
       }
     }
 
-    const schedulesRef = ref(db, 'horarios');
-    const newScheduleRef = push(schedulesRef);
-    const newScheduleKey = newScheduleRef.key; // Get the key of the new schedule
-
     try {
-      await update(ref(db, `horarios/${newScheduleKey}`), {
+      // Get the next schedule ID
+      const nextId = await getNextScheduleId();
+      
+      // Create a reference to the new schedule path
+      const newScheduleRef = ref(db, `horarios/${nextId}`);
+      
+      // Set the data
+      await set(newScheduleRef, {
         time: newTime,
         days: newDays,
         status: true,
       });
+      
       toast({
         title: 'Éxito',
-        description: 'Horario añadido exitosamente.',
+        description: `Horario añadido exitosamente como ${nextId}.`,
       });
       setNewTime('');
       setNewDays([]);
@@ -126,7 +158,12 @@ export default function Home() {
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
 
-    update(scheduleRef, {status: !currentStatus})
+    // We still need to update status - this is fine to use the update function
+    set(scheduleRef, {
+      time: schedules.find(s => s.id === id)?.time || '',
+      days: schedules.find(s => s.id === id)?.days || [],
+      status: !currentStatus
+    })
       .then(() => {
         setSchedules(prevSchedules =>
           prevSchedules.map(schedule =>
@@ -169,7 +206,12 @@ export default function Home() {
   const handleUpdateSchedule = async (id: string, updatedTime: string, updatedDays: string[]) => {
     try {
       const scheduleRef = ref(db, `horarios/${id}`);
-      await update(scheduleRef, { time: updatedTime, days: updatedDays });
+      // Use set instead of update
+      await set(scheduleRef, { 
+        time: updatedTime, 
+        days: updatedDays,
+        status: schedules.find(s => s.id === id)?.status || true
+      });
   
       setSchedules(prevSchedules =>
         prevSchedules.map(schedule =>
@@ -254,7 +296,7 @@ export default function Home() {
               <Card key={schedule.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle style={{color: schedule.status ? 'green' : 'red'}}>
-                    {schedule.time}
+                    {schedule.time} <span className="text-sm font-normal text-muted-foreground">({schedule.id})</span>
                   </CardTitle>
                   
                   <AlertDialog>
