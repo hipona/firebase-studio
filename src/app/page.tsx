@@ -1,22 +1,37 @@
 'use client';
-
-import {useState, useEffect} from 'react';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Switch} from '@/components/ui/switch';
-import {Separator} from '@/components/ui/separator';
-import {useToast} from '@/hooks/use-toast';
-import {Trash, Calendar, Moon, Sun} from 'lucide-react';
-import {Badge} from '@/components/ui/badge'; // Import Badge
-
-import {initializeApp} from 'firebase/app';
-import {getDatabase, ref, onValue, set, remove, get} from 'firebase/database';
-import {format, parse} from 'date-fns';
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger} from "@/components/ui/alert-dialog";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Trash, Calendar, Moon, Sun } from 'lucide-react';
+import { Badge } from '@/components/ui/badge'; // Import Badge
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, remove, get } from 'firebase/database';
+import { format, parse } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -43,10 +58,31 @@ export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTime, setNewTime] = useState('');
   const [newDays, setNewDays] = useState<string[]>([]);
-  const {toast} = useToast();
+  const { toast } = useToast();
   const [showAlert, setShowAlert] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState<boolean | null>(null);
+
+  // Función para actualizar la versión en Firebase
+  const updateVersion = async () => {
+    const versionRef = ref(db, 'version');
+    const snapshot = await get(versionRef);
+    const currentVersion = snapshot.val();
+
+    let newVersion;
+    do {
+      newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+    } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+
+    await set(versionRef, newVersion); // Actualiza la versión en Firebase
+  };
 
   useEffect(() => {
+    const serviceStatusRef = ref(db, 'status_arduino');
+    const unsubscribe = onValue(serviceStatusRef, snapshot => {
+      const status = snapshot.val();
+      setServiceStatus(status);
+    });
+
     const schedulesRef = ref(db, 'horarios');
     onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
@@ -62,43 +98,31 @@ export default function Home() {
         setSchedules([]);
       }
     });
+
+    return () => unsubscribe();
   }, []);
 
   const handleDayToggle = (day: string) => {
-    setNewDays(prevDays => {
-      if (prevDays.includes(day)) {
-        return prevDays.filter(d => d !== day);
-      } else {
-        return [...prevDays, day];
-      }
-    });
+    setNewDays(prevDays =>
+      prevDays.includes(day) ? prevDays.filter(d => d !== day) : [...prevDays, day]
+    );
   };
 
   const getNextScheduleId = async () => {
     const schedulesRef = ref(db, 'horarios');
     const snapshot = await get(schedulesRef);
     const data = snapshot.val();
-    
     if (!data) {
       return 'horario_1';
     }
-    
-    // Extract all existing schedule IDs
-    const scheduleIds = Object.keys(data);
-    
-    // Filter for ids that match the pattern "horario_X" where X is a number
-    const numericIds = scheduleIds
+    const scheduleIds = Object.keys(data)
       .filter(id => id.startsWith('horario_'))
       .map(id => {
         const numPart = id.split('_')[1];
         return parseInt(numPart, 10);
       })
       .filter(num => !isNaN(num));
-      
-    // Find the maximum number
-    const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
-    
-    // Create the next ID
+    const maxId = scheduleIds.length > 0 ? Math.max(...scheduleIds) : 0;
     return `horario_${maxId + 1}`;
   };
 
@@ -108,44 +132,38 @@ export default function Home() {
       return;
     }
 
-    // Check for time conflicts within a 1-minute range
     const newScheduleTime = parse(newTime, 'HH:mm', new Date());
     for (const schedule of schedules) {
       const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
       const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
-
       if (timeDifference <= 60000) {
-        // 60000 milliseconds = 1 minute
         toast({
           title: 'Error',
           description:
             'El nuevo horario está demasiado cerca de un horario existente. Por favor, elige una hora con al menos un minuto de diferencia.',
           variant: 'destructive',
         });
-        return; // Exit the function to prevent adding the schedule
+        return;
       }
     }
 
     try {
-      // Get the next schedule ID
       const nextId = await getNextScheduleId();
-      
-      // Create a reference to the new schedule path
       const newScheduleRef = ref(db, `horarios/${nextId}`);
-      
-      // Set the data
       await set(newScheduleRef, {
         time: newTime,
         days: newDays,
         status: true,
       });
-      
       toast({
         title: 'Éxito',
         description: `Horario añadido exitosamente como ${nextId}.`,
       });
       setNewTime('');
       setNewDays([]);
+
+      // Actualizar la versión en Firebase
+      await updateVersion();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -157,23 +175,24 @@ export default function Home() {
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
-
-    // We still need to update status - this is fine to use the update function
     set(scheduleRef, {
       time: schedules.find(s => s.id === id)?.time || '',
       days: schedules.find(s => s.id === id)?.days || [],
-      status: !currentStatus
+      status: !currentStatus,
     })
       .then(() => {
         setSchedules(prevSchedules =>
           prevSchedules.map(schedule =>
-            schedule.id === id ? {...schedule, status: !schedule.status} : schedule
+            schedule.id === id ? { ...schedule, status: !schedule.status } : schedule
           )
         );
         toast({
           title: 'Éxito',
           description: 'Estado del horario actualizado correctamente.',
         });
+
+        // Actualizar la versión en Firebase
+        updateVersion();
       })
       .catch(error => {
         toast({
@@ -193,6 +212,9 @@ export default function Home() {
           description: 'Horario eliminado exitosamente.',
         });
         setSchedules(prevSchedules => prevSchedules.filter(schedule => schedule.id !== id));
+
+        // Actualizar la versión en Firebase
+        updateVersion();
       })
       .catch(error => {
         toast({
@@ -206,22 +228,22 @@ export default function Home() {
   const handleUpdateSchedule = async (id: string, updatedTime: string, updatedDays: string[]) => {
     try {
       const scheduleRef = ref(db, `horarios/${id}`);
-      // Use set instead of update
-      await set(scheduleRef, { 
-        time: updatedTime, 
+      await set(scheduleRef, {
+        time: updatedTime,
         days: updatedDays,
-        status: schedules.find(s => s.id === id)?.status || true
+        status: schedules.find(s => s.id === id)?.status || true,
       });
-  
       setSchedules(prevSchedules =>
         prevSchedules.map(schedule =>
           schedule.id === id ? { ...schedule, time: updatedTime, days: updatedDays } : schedule
         )
       );
-  
       toast({
         title: 'Éxito',
         description: 'Horario actualizado exitosamente.',
+
+        // Actualizar la versión en Firebase
+        //updateVersion();
       });
     } catch (error: any) {
       toast({
@@ -234,7 +256,6 @@ export default function Home() {
 
   return (
     <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
-
       {/* Alert Dialog for missing time and days */}
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
@@ -245,13 +266,30 @@ export default function Home() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowAlert(false)}>
-              Aceptar
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => setShowAlert(false)}>Aceptar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
+      {/* Indicador de estado del servicio */}
+      <Card className="w-full max-w-md mb-4">
+        <CardHeader>
+          <CardTitle>Estado del Servicio</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <Badge
+              variant={serviceStatus ? 'default' : 'secondary'}
+              className={`px-2 py-1 rounded-full ${
+                serviceStatus ? 'bg-green-500 text-white' : 'bg-gray-400 text-gray-800'
+              }`}
+            >
+              {serviceStatus ? 'Activo' : 'Inactivo'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Añadir Nuevo Horario</CardTitle>
@@ -285,7 +323,9 @@ export default function Home() {
           <Button onClick={handleAddSchedule}>Añadir Horario</Button>
         </CardContent>
       </Card>
+
       <Separator className="my-4" />
+
       <div className="w-full max-w-md">
         <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
         {schedules.length === 0 ? (
@@ -295,10 +335,12 @@ export default function Home() {
             {schedules.map(schedule => (
               <Card key={schedule.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle style={{color: schedule.status ? 'green' : 'red'}}>
-                    {schedule.time} <span className="text-sm font-normal text-muted-foreground">({schedule.id})</span>
+                  <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
+                    {schedule.time}{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({schedule.id})
+                    </span>
                   </CardTitle>
-                  
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm">
@@ -323,15 +365,17 @@ export default function Home() {
                   </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {schedule.days && schedule.days.length > 0 ? (
-                        schedule.days.map(day => (
-                          <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">{day}</Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Días: No especificado</p>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {schedule.days && schedule.days.length > 0 ? (
+                      schedule.days.map(day => (
+                        <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">
+                          {day}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Días: No especificado</p>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-2 mt-2">
                     <Label htmlFor={`status-${schedule.id}`}>
                       {schedule.status ? 'Prende' : 'Apaga'}
