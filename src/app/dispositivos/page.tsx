@@ -3,6 +3,15 @@
 import {useEffect, useState} from 'react';
 import {initializeApp} from 'firebase/app';
 import {getDatabase, ref, onValue} from 'firebase/database';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {Badge} from '@/components/ui/badge';
+import {Separator} from '@/components/ui/separator';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -36,46 +45,61 @@ export default function DispositivosPage() {
 
   return (
     <div className="m-5">
-      <h1>Dispositivos</h1>
+      {/* Sección de Dispositivos */}
+      <h1 className="text-2xl font-bold mb-4">Dispositivos</h1>
       {dispositivos ? (
-        <ul>
-          {Object.entries(dispositivos).map(([id, data]: [string, any]) => (
-            <li key={id}>
-              <strong>{id}:</strong>
-              <ul>
+        Object.entries(dispositivos).map(([id, data]: [string, any]) => (
+          <Card key={id} className="mb-4">
+            <CardHeader>
+              <CardTitle>{id}</CardTitle>
+              <CardDescription>Detalles del dispositivo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
                 {Object.entries(data).map(([key, value]: [string, any]) => (
                   <li key={key}>
-                    {key}: {value}
+                    <strong>{key}:</strong> {value}
                   </li>
                 ))}
               </ul>
-            </li>
-          ))}
-        </ul>
+            </CardContent>
+          </Card>
+        ))
       ) : (
         <p>Cargando dispositivos...</p>
       )}
 
-      <h1>Eventos</h1>
+      <Separator className="my-6" />
+
+      {/* Sección de Eventos */}
+      <h1 className="text-2xl font-bold mb-4">Eventos</h1>
       {eventos ? (
-        <ul>
-          {Object.entries(eventos).map(([dispositivoId, eventosData]: [string, any]) => (
-            <li key={dispositivoId}>
-              <strong>Eventos de {dispositivoId}:</strong>
-              <ul>
+        Object.entries(eventos).map(([dispositivoId, eventosData]: [string, any]) => (
+          <Card key={dispositivoId} className="mb-4">
+            <CardHeader>
+              <CardTitle>Eventos de {dispositivoId}</CardTitle>
+              <CardDescription>Historial de eventos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-4">
                 {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => (
                   <li key={eventoId}>
-                    {Object.entries(eventoData).map(([key, value]: [string, any]) => (
-                      <p key={key}>
-                        {key}: {value}
-                      </p>
-                    ))}
+                    <div className="space-y-1">
+                      {Object.entries(eventoData).map(([key, value]: [string, any]) => (
+                        <div key={key}>
+                          <Badge variant="secondary" className="mr-2">
+                            {key}
+                          </Badge>
+                          {value}
+                        </div>
+                      ))}
+                    </div>
                   </li>
                 ))}
               </ul>
-            </li>
-          ))}
-        </ul>
+            </CardContent>
+          </Card>
+        ))
       ) : (
         <p>Cargando eventos...</p>
       )}

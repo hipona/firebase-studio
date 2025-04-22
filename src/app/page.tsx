@@ -293,11 +293,11 @@ export default function Home() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Añadir Nuevo Horario</CardTitle>
-          <CardDescription>Define la hora y los días para tu horario de riego.</CardDescription>
+          <CardDescription>Define la hora y los días a planificar.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="time">Hora (e.g., 19:00)</Label>
+            <Label htmlFor="time">Horario:</Label>
             <Input
               id="time"
               type="time"
@@ -306,7 +306,7 @@ export default function Home() {
             />
           </div>
           <div className="grid gap-2">
-            <Label>Días</Label>
+            <Label>Días:</Label>
             <div className="flex flex-wrap gap-2">
               {daysOfWeek.map(day => (
                 <Button
