@@ -289,7 +289,8 @@ export default function Home() {
           </div>
         </CardContent>
       </Card>
-
+      
+      {/* Parte Añadir Nuevo Horario */}
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Añadir Nuevo Horario</CardTitle>
@@ -325,7 +326,8 @@ export default function Home() {
       </Card>
 
       <Separator className="my-4" />
-
+      
+      {/* Parte De Mis Horario */}
       <div className="w-full max-w-md">
         <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
         {schedules.length === 0 ? (
