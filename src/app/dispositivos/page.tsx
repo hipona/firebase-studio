@@ -91,6 +91,9 @@ export default function DispositivosPage() {
                     <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
                       {eventoData.hora} {eventoData.fecha}
                     </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
+                      Tipo: {eventoData.tipo}
+                    </div>
                   </li>
                 ))}
               </ul>
