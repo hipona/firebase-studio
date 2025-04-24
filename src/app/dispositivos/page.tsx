@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {Badge} from '@/components/ui/badge';
 import {Separator} from '@/components/ui/separator';
+import {CheckCircle} from 'lucide-react'; // Import CheckCircle icon
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -81,18 +81,15 @@ export default function DispositivosPage() {
               <CardDescription>Historial de eventos</CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-4">
+              <ul className="relative list-none pl-5 mt-2 before:content-[''] before:w-0.5 before:h-full before:absolute before:top-0 before:left-2 before:bg-border">
                 {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => (
-                  <li key={eventoId}>
-                    <div className="space-y-1">
-                      {Object.entries(eventoData).map(([key, value]: [string, any]) => (
-                        <div key={key}>
-                          <Badge variant="secondary" className="mr-2">
-                            {key}
-                          </Badge>
-                          {value}
-                        </div>
-                      ))}
+                  <li key={eventoId} className="mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:h-2 before:bg-green-300 before:border-2 before:border-green-500 before:absolute before:left-0 before:top-1.5 before:rounded-full">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <CheckCircle className="inline-block h-4 w-4 mr-1 text-green-500 align-middle" />
+                      {eventoData.descripcion}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
+                      {eventoData.hora} {eventoData.fecha}
                     </div>
                   </li>
                 ))}

@@ -12,3 +12,18 @@ body {
 }
 
 /* Add more styles as needed */
+.custom-badge-green {
+  background-color: green;
+  font-size: 0.9rem; /* Tamaño del texto */
+  color: white;
+  padding: 0.5rem 0.5rem;
+  border-radius: 9999px; /* Bordes redondeados */
+}
+
+.custom-badge-red {
+  background-color: red;
+  font-size: 0.9rem; /* Tamaño del texto */
+  color: white;
+  padding: 0.5rem 0.5rem;
+  border-radius: 9999px; /* Bordes redondeados */
+}

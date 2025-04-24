@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import '../../styles.css'; // Importa el archivo CSS
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -370,7 +371,7 @@ export default function Home() {
                   <div className="flex flex-wrap gap-1 mb-2">
                     {schedule.days && schedule.days.length > 0 ? (
                       schedule.days.map(day => (
-                        <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">
+                        <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
                           {day}
                         </Badge>
                       ))
