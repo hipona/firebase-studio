@@ -16,11 +16,12 @@ import {useToast} from '@/hooks/use-toast';
 import {Trash, Calendar, Moon, Sun, Loader2, X} from 'lucide-react';
 import {Badge} from '@/components/ui/badge'; // Import Badge
 import {initializeApp} from 'firebase/app';
-import {getDatabase, ref, onValue, set, remove, get, update} from 'firebase/database';
+import {getDatabase, ref, onValue, set, remove, get} from 'firebase/database';
 import {format, parse} from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
