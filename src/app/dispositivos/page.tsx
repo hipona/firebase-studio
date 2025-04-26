@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import {initializeApp} from 'firebase/app';
 import {getDatabase, ref, onValue, remove} from 'firebase/database';
 import {
@@ -75,14 +75,21 @@ export default function DispositivosPage() {
       });
   };
 
-  const swipeHandlers = (dispositivoId: string, eventoId: string) =>
-    useSwipeable({
-      onSwipedLeft: () => {
-        deleteEvent(dispositivoId, eventoId);
-      },
-      preventDefaultTouchmoveEvent: true,
-      trackMouse: false,
-    });
+  const swipeRefs = useRef<{[key: string]: ReturnType<typeof useSwipeable>}>({});
+
+  const swipeHandlers = (dispositivoId: string, eventoId: string) => {
+    const key = `${dispositivoId}-${eventoId}`;
+    if (!swipeRefs.current[key]) {
+      swipeRefs.current[key] = useSwipeable({
+        onSwipedLeft: () => {
+          deleteEvent(dispositivoId, eventoId);
+        },
+        preventDefaultTouchmoveEvent: true,
+        trackMouse: false,
+      });
+    }
+    return swipeRefs.current[key];
+  };
 
   return (
     <div className="m-5">
@@ -131,7 +138,7 @@ export default function DispositivosPage() {
                       {...handlers}
                       className="relative mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:h-2 before:bg-green-300 before:border-2 before:border-green-500 before:absolute before:left-0 before:top-1.5 before:rounded-full overflow-hidden transition-all transform origin-right"
                       style={{
-                        transform: handlers.isSwiping ? `translateX(-20px)` : 'translateX(0)',
+                        transform: handlers?.isSwiping ? `translateX(-20px)` : 'translateX(0)',
                       }}
                     >
                       <div className="relative z-10 bg-background p-2">
