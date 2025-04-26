@@ -77,6 +77,7 @@ export default function DispositivosPage() {
 
   const swipeRefs = useRef<{[key: string]: ReturnType<typeof useSwipeable>}>({});
 
+  // Move useSwipeable inside the useCallback
   const swipeHandlers = useCallback(
     (dispositivoId: string, eventoId: string) => {
       const key = `${dispositivoId}-${eventoId}`;
@@ -91,7 +92,7 @@ export default function DispositivosPage() {
         });
       }
 
-      return swipeRefs.current[key];
+      return swipeRefs.current[key].props; // Return the swipe handlers
     },
     [deleteEvent]
   );
