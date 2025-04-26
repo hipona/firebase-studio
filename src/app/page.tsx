@@ -1,23 +1,17 @@
 'use client';
-import {useState, useEffect} from 'react';
-import {Button} from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Switch} from '@/components/ui/switch';
-import {Separator} from '@/components/ui/separator';
-import {useToast} from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 import {Trash, Calendar, Moon, Sun, Loader2, X} from 'lucide-react';
-import {Badge} from '@/components/ui/badge'; // Import Badge
-import {initializeApp} from 'firebase/app';
-import {getDatabase, ref, onValue, set, remove, get} from 'firebase/database';
-import {format, parse} from 'date-fns';
+import { Badge } from '@/components/ui/badge'; // Import Badge
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, remove, get } from 'firebase/database';
+import { format, parse } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,11 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import '../../styles.css'; // Importa el archivo CSS
 import {CheckCircle} from 'lucide-react';
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger} from '@/components/ui/sheet';
-import {RadioButton} from '@/components/ui/radio-button';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -68,7 +61,7 @@ export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTime, setNewTime] = useState('');
   const [newDays, setNewDays] = useState<string[]>([]);
-  const {toast} = useToast();
+  const { toast } = useToast();
   const [showAlert, setShowAlert] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<boolean | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false); // Estado para controlar la Sheet
@@ -101,14 +94,12 @@ export default function Home() {
     onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
       if (data) {
-        const schedulesList: Schedule[] = Object.entries(data).map(
-          ([key, value]) => ({
-            id: key,
-            time: value.time,
-            days: value.days || [],
-            status: value.status,
-          })
-        );
+        const schedulesList: Schedule[] = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          time: value.time,
+          days: value.days || [],
+          status: value.status,
+        }));
         setSchedules(schedulesList);
       } else {
         setSchedules([]);
@@ -151,9 +142,7 @@ export default function Home() {
     const newScheduleTime = parse(newTime, 'HH:mm', new Date());
     for (const schedule of schedules) {
       const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
-      const timeDifference = Math.abs(
-        newScheduleTime.getTime() - existingScheduleTime.getTime()
-      );
+      const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
       if (timeDifference <= 60000) {
         toast({
           title: 'Error',
@@ -166,8 +155,8 @@ export default function Home() {
     }
 
     try {
-      const newScheduleKey = await getNextScheduleId();
-      const newScheduleRef = ref(db, `horarios/${newScheduleKey}`);
+      const nextId = await getNextScheduleId();
+      const newScheduleRef = ref(db, `horarios/${nextId}`);
       await set(newScheduleRef, {
         time: newTime,
         days: newDays,
@@ -175,7 +164,7 @@ export default function Home() {
       });
       toast({
         title: 'Éxito',
-        description: `Horario añadido exitosamente como ${newScheduleKey}.`,
+        description: `Horario añadido exitosamente como ${nextId}.`,
       });
       setNewTime('');
       setNewDays([]);
@@ -193,20 +182,15 @@ export default function Home() {
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
-    const schedule = schedules.find(s => s.id === id);
-    if (!schedule) {
-      console.error(`Schedule with id ${id} not found`);
-      return;
-    }
     set(scheduleRef, {
-      time: schedule.time,
-      days: schedule.days,
+      time: schedules.find(s => s.id === id)?.time || '',
+      days: schedules.find(s => s.id === id)?.days || [],
       status: !currentStatus,
     })
       .then(() => {
         setSchedules(prevSchedules =>
           prevSchedules.map(schedule =>
-            schedule.id === id ? {...schedule, status: !schedule.status} : schedule
+            schedule.id === id ? { ...schedule, status: !schedule.status } : schedule
           )
         );
         toast({
@@ -258,12 +242,15 @@ export default function Home() {
       });
       setSchedules(prevSchedules =>
         prevSchedules.map(schedule =>
-          schedule.id === id ? {...schedule, time: updatedTime, days: updatedDays} : schedule
+          schedule.id === id ? { ...schedule, time: updatedTime, days: updatedDays } : schedule
         )
       );
       toast({
         title: 'Éxito',
         description: 'Horario actualizado exitosamente.',
+
+        // Actualizar la versión en Firebase
+        //updateVersion();
       });
     } catch (error: any) {
       toast({
@@ -274,7 +261,7 @@ export default function Home() {
     }
   };
 
-  const toggleServiceStatus = () => {
+   const toggleServiceStatus = () => {
     const newStatus = !serviceStatus;
     const serviceStatusRef = ref(db, 'status_arduino');
     set(serviceStatusRef, newStatus)
@@ -301,7 +288,7 @@ export default function Home() {
   return (
     <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
       {/* Alert Dialog for missing time and days */}
-      <AlertDialog open={showAlert} onOpenChange={(open) => setShowAlert(open)}>
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Error</AlertDialogTitle>
@@ -310,14 +297,12 @@ export default function Home() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowAlert(false)}>
-              Aceptar
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => setShowAlert(false)}>Aceptar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Card for Service Status */}
+      {/* Indicador de estado del servicio */}
       <Card className="mb-4 w-full max-w-md">
         <CardHeader>
           <CardTitle>Estado actual del dispositivo</CardTitle>
@@ -340,116 +325,111 @@ export default function Home() {
           <Switch checked={!!serviceStatus} onCheckedChange={toggleServiceStatus} />
         </CardContent>
       </Card>
-
-      {/* Listado de Horarios */}
-      <h2 className="text-2xl font-bold mt-6 mb-4">Mis Horarios</h2>
-      {schedules.length === 0 ? (
-        <p>No hay horarios añadidos aún.</p>
-      ) : (
-        <div className="grid gap-4">
-          {schedules.map(schedule => (
-            <Card key={schedule.id}>
-              <CardHeader>
-                <CardTitle>
-                  <span
-                    className={schedule.status ? 'text-green-500' : 'text-red-500'}
-                  >
-                    {schedule.time}
-                  </span>{' '}
-                  ({schedule.id})
-                </CardTitle>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <Trash className="h-4 w-4 mr-2" />
-                      Eliminar
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      ¿Estás seguro?
-                    </AlertDialogHeader>
-                    <AlertDialogDescription>
-                      Esta acción eliminará el horario permanentemente. ¿Estás seguro de que
-                        quieres proceder?
-                    </AlertDialogDescription>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteSchedule(schedule.id)}>
-                        Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {schedule.days && schedule.days.length > 0 ? (
-                    schedule.days.map(day => (
-                      <Badge key={day} variant="secondary" className="rounded-full text-0.9rem">
-                        {day}
-                      </Badge>
-                    ))
-                  ) : (
-                    <Badge variant="outline">No especificado</Badge>
-                  )}
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Label htmlFor={`status-${schedule.id}`}>{schedule.status ? 'Prende' : 'Apaga'}</Label>
-                  <Switch
-                    id={`status-${schedule.id}`}
-                    checked={schedule.status}
-                    onCheckedChange={checked => handleStatusToggle(schedule.id, checked)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
+      
       {/* Parte Añadir Nuevo Horario */}
-      <Sheet open={sheetOpen} onOpenChange={onOpenChange}>
-        <SheetTrigger asChild>
-          <Button variant="outline">Añadir Nuevo Horario</Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <SheetHeader>
-            <SheetTitle>Añadir Nuevo Horario</SheetTitle>
-            <SheetDescription>Define la hora y los días a planificar.</SheetDescription>
-          </SheetHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">
-                Horario:
-              </Label>
-              <Input
-                type="time"
-                id="time"
-                value={newTime}
-                onChange={e => setNewTime(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div>
-              <Label>Días:</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {daysOfWeek.map(day => (
-                  <Button
-                    key={day}
-                    variant={newDays.includes(day) ? 'secondary' : 'outline'}
-                    onClick={() => handleDayToggle(day)}
-                    size="sm"
-                  >
-                    {day}
-                  </Button>
-                ))}
-              </div>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Añadir Nuevo Horario</CardTitle>
+          <CardDescription>Define la hora y los días a planificar.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="time">Horario:</Label>
+            <Input
+              id="time"
+              type="time"
+              value={newTime}
+              onChange={e => setNewTime(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>Días:</Label>
+            <div className="flex flex-wrap gap-2">
+              {daysOfWeek.map(day => (
+                <Button
+                  key={day}
+                  variant={newDays.includes(day) ? 'default' : 'outline'}
+                  onClick={() => handleDayToggle(day)}
+                  className={newDays.includes(day) ? 'bg-primary text-primary-foreground' : ''}
+                >
+                  {day}
+                </Button>
+              ))}
             </div>
           </div>
           <Button onClick={handleAddSchedule}>Añadir Horario</Button>
-        </SheetContent>
-      </Sheet>
+        </CardContent>
+      </Card>
+
+      <Separator className="my-4" />
+      
+      {/* Parte De Mis Horario */}
+      <div className="w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
+        {schedules.length === 0 ? (
+          <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
+        ) : (
+          <div className="grid gap-4">
+            {schedules.map(schedule => (
+              <Card key={schedule.id}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
+                    {schedule.time}{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({schedule.id})
+                    </span>
+                  </CardTitle>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
+                          proceder?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteSchedule(schedule.id)}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {schedule.days && schedule.days.length > 0 ? (
+                      schedule.days.map(day => (
+                        <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
+                          {day}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Días: No especificado</p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Label htmlFor={`status-${schedule.id}`}>
+                      {schedule.status ? 'Prende' : 'Apaga'}
+                    </Label>
+                    <Switch
+                      id={`status-${schedule.id}`}
+                      checked={schedule.status}
+                      onCheckedChange={() => handleStatusToggle(schedule.id, schedule.status)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
