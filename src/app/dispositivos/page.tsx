@@ -14,7 +14,6 @@ import {Separator} from '@/components/ui/separator';
 import {CheckCircle, Trash} from 'lucide-react'; // Import CheckCircle icon
 import {useSwipeable} from 'react-swipeable';
 import {useToast} from '@/hooks/use-toast';
-import {updateVersion} from '@/app/page'; // Import updateVersion
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -63,7 +62,6 @@ export default function DispositivosPage() {
           }
           return updatedEventos;
         });
-        updateVersion();
       })
       .catch(error => {
         toast({
