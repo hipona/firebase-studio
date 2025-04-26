@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useState, useRef, useCallback} from 'react';
 import {initializeApp} from 'firebase/app';
 import {getDatabase, ref, onValue, remove} from 'firebase/database';
 import {
@@ -77,19 +77,24 @@ export default function DispositivosPage() {
 
   const swipeRefs = useRef<{[key: string]: ReturnType<typeof useSwipeable>}>({});
 
-  const swipeHandlers = (dispositivoId: string, eventoId: string) => {
-    const key = `${dispositivoId}-${eventoId}`;
-    if (!swipeRefs.current[key]) {
-      swipeRefs.current[key] = useSwipeable({
-        onSwipedLeft: () => {
-          deleteEvent(dispositivoId, eventoId);
-        },
-        preventDefaultTouchmoveEvent: true,
-        trackMouse: false,
-      });
-    }
-    return swipeRefs.current[key];
-  };
+  const swipeHandlers = useCallback(
+    (dispositivoId: string, eventoId: string) => {
+      const key = `${dispositivoId}-${eventoId}`;
+
+      if (!swipeRefs.current[key]) {
+        swipeRefs.current[key] = useSwipeable({
+          onSwipedLeft: () => {
+            deleteEvent(dispositivoId, eventoId);
+          },
+          preventDefaultTouchmoveEvent: true,
+          trackMouse: false,
+        });
+      }
+
+      return swipeRefs.current[key];
+    },
+    [deleteEvent]
+  );
 
   return (
     <div className="m-5">
