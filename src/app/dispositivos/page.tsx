@@ -55,6 +55,9 @@ export default function DispositivosPage() {
           description: 'Evento eliminado exitosamente.',
         });
         setEventos(prevEventos => {
+          if (!prevEventos || !prevEventos[dispositivoId]) {
+            return prevEventos;
+          }
           const updatedEventos = {...prevEventos};
           delete updatedEventos[dispositivoId][eventoId];
           if (Object.keys(updatedEventos[dispositivoId]).length === 0) {
@@ -74,7 +77,9 @@ export default function DispositivosPage() {
 
   const swipeHandlers = (dispositivoId: string, eventoId: string) =>
     useSwipeable({
-      onSwipedLeft: () => deleteEvent(dispositivoId, eventoId),
+      onSwipedLeft: () => {
+        deleteEvent(dispositivoId, eventoId);
+      },
       preventDefaultTouchmoveEvent: true,
       trackMouse: false,
     });

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import {Trash, Calendar, Moon, Sun, Loader2, X} from 'lucide-react';
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set, remove, get, push } from 'firebase/database';
+import { getDatabase, ref, onValue, set, remove, get } from 'firebase/database';
 import { format, parse } from 'date-fns';
 import {
   AlertDialog,
@@ -286,137 +286,150 @@ export default function Home() {
   };
 
   return (
-    
-      
-        
-          
-            
-              Error
+    <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
+      {/* Alert Dialog for missing time and days */}
+      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Error</AlertDialogTitle>
+            <AlertDialogDescription>
               Por favor, selecciona al menos un día y una hora para crear el horario.
-            
-          
-          
-            Aceptar
-          
-        
-      
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowAlert(false)}>Aceptar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
+      {/* Indicador de estado del servicio */}
+      <Card className="mb-4 w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Estado actual del dispositivo</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <div className="flex items-center">
+            {serviceStatus === true && (
+              <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
+            )}
+            {serviceStatus === false && (
+              <X className="h-6 w-6 text-red-500 mr-2" />
+            )}
+            {serviceStatus === null && (
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            )}
+            {serviceStatus !== null && (
+              <span>{serviceStatus ? 'Activo' : 'Inactivo'}</span>
+            )}
+          </div>
+          <Switch checked={!!serviceStatus} onCheckedChange={toggleServiceStatus} />
+        </CardContent>
+      </Card>
       
-        
-          Estado actual del dispositivo
-        
-        
-          
-            
-              
-              {serviceStatus === true && (
-                
-              )}
-              {serviceStatus === false && (
-                
-              )}
-              {serviceStatus === null && (
-                
-              )}
-              {serviceStatus !== null && (
-                
-                  {serviceStatus ? 'Activo' : 'Inactivo'}
-                
-              )}
-            
-            
-             
-        
-      
-      
-        
-          Añadir Nuevo Horario
-          Define la hora y los días a planificar.
-          
-          
-            
-              Horario:
-            
-            
-              
-              
-            
-          
-          
-            Días:
-          
-          
-            
+      {/* Parte Añadir Nuevo Horario */}
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Añadir Nuevo Horario</CardTitle>
+          <CardDescription>Define la hora y los días a planificar.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="time">Horario:</Label>
+            <Input
+              id="time"
+              type="time"
+              value={newTime}
+              onChange={e => setNewTime(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>Días:</Label>
+            <div className="flex flex-wrap gap-2">
               {daysOfWeek.map(day => (
-                
+                <Button
+                  key={day}
+                  variant={newDays.includes(day) ? 'default' : 'outline'}
+                  onClick={() => handleDayToggle(day)}
+                  className={newDays.includes(day) ? 'bg-primary text-primary-foreground' : ''}
+                >
                   {day}
-                
+                </Button>
               ))}
-            
-          
-          
-            Añadir Horario
-          
-        
-      
-      
+            </div>
+          </div>
+          <Button onClick={handleAddSchedule}>Añadir Horario</Button>
+        </CardContent>
+      </Card>
 
+      <Separator className="my-4" />
       
-        
-          No hay horarios añadidos aún.
-        
-      
-        
-          {schedules.map(schedule => (
-            
-              
-                
-                  
-                    {schedule.time}
-                     (
-                      {schedule.id}
-                    )
-                  
-                  
-                    
-                      
-                        ¿Estás seguro?
-                        Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
-                        proceder?
-                      
-                      
-                        Cancelar
-                        Eliminar
-                      
-                    
-                  
-                
-                
-                  
+      {/* Parte De Mis Horario */}
+      <div className="w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
+        {schedules.length === 0 ? (
+          <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
+        ) : (
+          <div className="grid gap-4">
+            {schedules.map(schedule => (
+              <Card key={schedule.id}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
+                    {schedule.time}{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      ({schedule.id})
+                    </span>
+                  </CardTitle>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
+                          proceder?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteSchedule(schedule.id)}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1 mb-2">
                     {schedule.days && schedule.days.length > 0 ? (
                       schedule.days.map(day => (
-                       
-                         {day}
-                        
+                        <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
+                          {day}
+                        </Badge>
                       ))
                     ) : (
-                      
-                        Días: No especificado
-                      
+                      <p className="text-sm text-muted-foreground">Días: No especificado</p>
                     )}
-                  
-                  
-                    
+                  </div>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Label htmlFor={`status-${schedule.id}`}>
                       {schedule.status ? 'Prende' : 'Apaga'}
-                    
-                    
-                  
-                
-              
-            
-          ))}
-        
-      
-    
+                    </Label>
+                    <Switch
+                      id={`status-${schedule.id}`}
+                      checked={schedule.status}
+                      onCheckedChange={() => handleStatusToggle(schedule.id, schedule.status)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
