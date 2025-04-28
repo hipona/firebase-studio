@@ -66,6 +66,20 @@ export default function Home() {
     null
   );
 
+  // Función para actualizar la versión en Firebase
+  const updateVersion = async () => {
+    const versionRef = ref(db, 'version');
+    const snapshot = await get(versionRef);
+    const currentVersion = snapshot.val();
+
+    let newVersion;
+    do {
+      newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+    } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+
+    await set(versionRef, newVersion); // Actualiza la versión en Firebase
+  };
+
   useEffect(() => {
     const serviceStatusRef = ref(db, 'status_arduino');
     const unsubscribe = onValue(serviceStatusRef, snapshot => {

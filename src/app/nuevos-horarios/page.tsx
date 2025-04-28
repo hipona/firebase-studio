@@ -70,6 +70,90 @@ export default function NuevosHorariosPage() {
     null
   );
 
+  const updateVersion = async () => {
+    const versionRef = ref(db, 'version');
+    const snapshot = await get(versionRef);
+    const currentVersion = snapshot.val();
+
+    let newVersion;
+    do {
+      newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+    } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+
+    await set(versionRef, newVersion); // Actualiza la versión en Firebase
+  };
+
+  const handleDayToggle = (day: string) => {
+    setNewDays(prevDays =>
+      prevDays.includes(day) ? prevDays.filter(d => d !== day) : [...prevDays, day]
+    );
+  };
+
+  const handleAddSchedule = async () => {
+    if (newDays.length === 0 || !newTime) {
+      setShowAlert(true);
+      return;
+    }
+
+    const newScheduleTime = parse(newTime, 'HH:mm', new Date());
+    for (const schedule of schedules) {
+      const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
+      const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
+      if (timeDifference <= 60000) {
+        toast({
+          title: 'Error',
+          description:
+            'El nuevo horario está demasiado cerca de un horario existente. Por favor, elige una hora con al menos un minuto de diferencia.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    try {
+      const nextId = await getNextScheduleId();
+      const newScheduleRef = ref(db, `horarios/${nextId}`);
+      await set(newScheduleRef, {
+        time: newTime,
+        days: newDays,
+        status: true,
+      });
+      toast({
+        title: 'Éxito',
+        description: `Horario añadido exitosamente como ${nextId}.`,
+      });
+      setNewTime('');
+      setNewDays([]);
+
+      // Actualizar la versión en Firebase
+      await updateVersion();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Fallo al añadir el horario: ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getNextScheduleId = async () => {
+    const schedulesRef = ref(db, 'horarios');
+    const snapshot = await get(schedulesRef);
+    const data = snapshot.val();
+    if (!data) {
+      return 'horario_1';
+    }
+    const scheduleIds = Object.keys(data)
+      .filter(id => id.startsWith('horario_'))
+      .map(id => {
+        const numPart = id.split('_')[1];
+        return parseInt(numPart, 10);
+      })
+      .filter(num => !isNaN(num));
+    const maxId = scheduleIds.length > 0 ? Math.max(...scheduleIds) : 0;
+    return `horario_${maxId + 1}`;
+  };
+
   return (
     <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
       {/* Alert Dialog for missing time and days */}

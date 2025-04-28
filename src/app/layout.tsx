@@ -65,19 +65,20 @@ export default function RootLayout({
               href="/"
               className="text-lg font-medium px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
             >
+               <HomeIcon className="mr-2 inline-block h-5 w-5" />
               Inicio
-            </Link>
-            <Link
-              href="/dispositivos"
-              className="text-lg font-medium px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              Eventos
             </Link>
             <Link
               href="/nuevos-horarios"
               className="text-lg font-medium px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
             >
               Nuevo Horario
+            </Link>
+            <Link
+              href="/dispositivos"
+              className="text-lg font-medium px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              Eventos
             </Link>
           </nav>
 
