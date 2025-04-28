@@ -73,6 +73,12 @@ export default function RootLayout({
             >
               Eventos
             </Link>
+            <Link
+              href="/nuevos-horarios"
+              className="text-lg font-medium px-4 py-2 rounded-md hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              Nuevo Horario
+            </Link>
           </nav>
 
           {/* Botón de modo oscuro/claro */}

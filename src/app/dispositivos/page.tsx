@@ -1,8 +1,8 @@
 'use client';
 
-import {useEffect, useState, useRef, useCallback} from 'react';
-import {initializeApp} from 'firebase/app';
-import {getDatabase, ref, onValue, remove} from 'firebase/database';
+import { useEffect, useState, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import {
   Card,
   CardContent,
@@ -10,10 +10,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {Separator} from '@/components/ui/separator';
-import {CheckCircle, Trash} from 'lucide-react'; // Import CheckCircle icon
-import {useSwipeable} from 'react-swipeable';
-import {useToast} from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle, Trash } from 'lucide-react';
+import { useSwipeable } from 'react-swipeable';
+import { useToast } from '@/hooks/use-toast';
+
+// Define interfaces for type safety
+interface Evento {
+  descripcion: string;
+  fecha_hora: string;
+  tipo: string;
+}
+
+interface Eventos {
+  [dispositivoId: string]: {
+    [eventoId: string]: Evento;
+  };
+}
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -29,8 +42,9 @@ const db = getDatabase(app);
 
 export default function DispositivosPage() {
   const [dispositivos, setDispositivos] = useState<any>(null);
-  const [eventos, setEventos] = useState<any>(null);
-  const {toast} = useToast();
+  const [eventos, setEventos] = useState<Eventos | null>(null);
+  const { toast } = useToast();
+  const swipeItemsRef = useRef(new Map());
 
   useEffect(() => {
     const dispositivosRef = ref(db, 'dispositivos');
@@ -54,11 +68,11 @@ export default function DispositivosPage() {
           title: 'Éxito',
           description: 'Evento eliminado exitosamente.',
         });
-        setEventos(prevEventos => {
+        setEventos((prevEventos: Eventos | null) => {
           if (!prevEventos || !prevEventos[dispositivoId]) {
             return prevEventos;
           }
-          const updatedEventos = {...prevEventos};
+          const updatedEventos: Eventos = { ...prevEventos };
           delete updatedEventos[dispositivoId][eventoId];
           if (Object.keys(updatedEventos[dispositivoId]).length === 0) {
             delete updatedEventos[dispositivoId];
@@ -75,27 +89,76 @@ export default function DispositivosPage() {
       });
   };
 
-  const swipeRefs = useRef<{[key: string]: ReturnType<typeof useSwipeable>}>({});
+  interface EventItemProps {
+    dispositivoId: string;
+    eventoId: string;
+    eventoData: Evento;
+  }
 
-  // Move useSwipeable inside the useCallback
-  const swipeHandlers = useCallback(
-    (dispositivoId: string, eventoId: string) => {
-      const key = `${dispositivoId}-${eventoId}`;
+  const EventItem: React.FC<EventItemProps> = ({ dispositivoId, eventoId, eventoData }) => {
+    const itemKey = `${dispositivoId}-${eventoId}`;
+    const [isDeleting, setIsDeleting] = useState(false); // Estado para controlar la eliminación
+    const [isItemSwiping, setIsItemSwiping] = useState(false);
 
-      if (!swipeRefs.current[key]) {
-        swipeRefs.current[key] = useSwipeable({
-          onSwipedLeft: () => {
-            deleteEvent(dispositivoId, eventoId);
-          },
-          preventDefaultTouchmoveEvent: true,
-          trackMouse: false,
-        });
-      }
+    const handlers = useSwipeable({
+      onSwipedLeft: () => handleDelete(),
+      onSwiping: () => setIsItemSwiping(true),
+      onSwiped: () => setIsItemSwiping(false),
+      preventScrollOnSwipe: true,
+      trackMouse: true,
+    });
 
-      return swipeRefs.current[key].props; // Return the swipe handlers
-    },
-    [deleteEvent]
-  );
+    const handleDelete = () => {
+      setIsDeleting(true); // Activar el estado de eliminación
+      setTimeout(() => {
+        deleteEvent(dispositivoId, eventoId); // Eliminar el evento después de la animación
+      }, 300); // Duración de la animación
+    };
+
+    useEffect(() => {
+      swipeItemsRef.current.set(itemKey, handlers);
+      return () => {
+        swipeItemsRef.current.delete(itemKey);
+      };
+    }, [itemKey]);
+
+    return (
+      <li
+        {...handlers}
+        className={`relative mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:h-2 before:bg-green-300 before:border-2 before:border-green-500 before:absolute before:left-0 before:top-1.5 before:rounded-full overflow-hidden transition-all transform origin-right ${
+          isDeleting ? 'bg-red-500' : '' // Cambiar el fondo a rojo al eliminar
+        }`}
+        style={{
+          transform: isItemSwiping ? `translateX(-20px)` : 'translateX(0)',
+        }}
+      >
+        <div className="relative z-10 bg-background p-2">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <CheckCircle className="inline-block h-4 w-4 mr-1 text-green-500 align-middle" />
+            {eventoData.descripcion}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
+            {eventoData.fecha_hora}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
+            Tipo: {eventoData.tipo}
+          </div>
+        </div>
+        <button
+          onClick={handleDelete}
+          className={`absolute top-0 bottom-0 right-0 w-10 flex items-center justify-center transition-colors ${
+            isDeleting ? 'bg-red-700' : 'bg-red-500' // Cambiar el color del botón al eliminar
+          }`}
+        >
+          <Trash
+            className={`h-5 w-5 transition-transform ${
+              isDeleting ? 'scale-125' : '' // Escalar el ícono al eliminar
+            }`}
+          />
+        </button>
+      </li>
+    );
+  };
 
   return (
     <div className="m-5">
@@ -136,38 +199,14 @@ export default function DispositivosPage() {
             </CardHeader>
             <CardContent>
               <ul>
-                {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => {
-                  const handlers = swipeHandlers(dispositivoId, eventoId);
-                  return (
-                    <li
-                      key={eventoId}
-                      {...handlers}
-                      className="relative mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:h-2 before:bg-green-300 before:border-2 before:border-green-500 before:absolute before:left-0 before:top-1.5 before:rounded-full overflow-hidden transition-all transform origin-right"
-                      style={{
-                        transform: handlers?.isSwiping ? `translateX(-20px)` : 'translateX(0)',
-                      }}
-                    >
-                      <div className="relative z-10 bg-background p-2">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          <CheckCircle className="inline-block h-4 w-4 mr-1 text-green-500 align-middle" />
-                          {eventoData.descripcion}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
-                          {eventoData.hora} {eventoData.fecha}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500 ml-5">
-                          Tipo: {eventoData.tipo}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteEvent(dispositivoId, eventoId)}
-                        className="absolute top-0 bottom-0 right-0 w-10 bg-red-500 text-white flex items-center justify-center"
-                      >
-                        <Trash className="h-5 w-5" />
-                      </button>
-                    </li>
-                  );
-                })}
+                {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => (
+                  <EventItem
+                    key={eventoId}
+                    dispositivoId={dispositivoId}
+                    eventoId={eventoId}
+                    eventoData={eventoData}
+                  />
+                ))}
               </ul>
             </CardContent>
           </Card>
