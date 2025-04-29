@@ -100,6 +100,7 @@ export default function NuevosHorariosPage() {
       const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
       const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
       if (timeDifference <= 60000) {
+        setShowAlert(true); // Add this line
         toast({
           title: 'Error',
           description:
@@ -174,7 +175,7 @@ export default function NuevosHorariosPage() {
       {/* Parte Añadir Nuevo Horario */}
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Nuevo Horario</CardTitle>
+          <CardTitle>Añadir Nuevo Horario</CardTitle>
           <CardDescription>Define la hora y los días a planificar.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

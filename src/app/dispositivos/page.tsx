@@ -125,7 +125,7 @@ export default function DispositivosPage() {
     return (
       <li
         {...handlers}
-        className={`relative mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:h-2 before:bg-green-300 before:border-2 before:border-green-500 before:absolute before:left-0 before:top-1.5 before:rounded-full overflow-hidden transition-all transform origin-right ${
+        className={`relative mb-3.5 pl-4 last:mb-0 before:content-[''] before:w-2 before:top-1.5 before:rounded-full overflow-hidden transition-all transform origin-right ${
           isDeleting ? 'bg-red-500' : '' // Cambiar el fondo a rojo al eliminar
         }`}
         style={{
