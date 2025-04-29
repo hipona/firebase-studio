@@ -36,6 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import '../../../styles.css';
 import { CheckCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -69,6 +70,7 @@ export default function NuevosHorariosPage() {
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(
     null
   );
+  const [newStatus, setNewStatus] = useState<boolean>(true); // Estado para el status del nuevo horario
 
   const updateVersion = async () => {
     const versionRef = ref(db, 'version');
@@ -117,7 +119,7 @@ export default function NuevosHorariosPage() {
       await set(newScheduleRef, {
         time: newTime,
         days: newDays,
-        status: true,
+        status: newStatus, // Usar el estado del radio button
       });
       toast({
         title: 'Éxito',
@@ -125,6 +127,7 @@ export default function NuevosHorariosPage() {
       });
       setNewTime('');
       setNewDays([]);
+      setNewStatus(true); // Resetear el estado del radio button
 
       // Actualizar la versión en Firebase
       await updateVersion();
@@ -203,9 +206,23 @@ export default function NuevosHorariosPage() {
               ))}
             </div>
           </div>
+           <div className="grid gap-2">
+              <Label>Estado:</Label>
+              <RadioGroup defaultValue={newStatus.toString()} className="flex gap-2" onValueChange={(value) => setNewStatus(value === 'true')}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="true" id="on" />
+                  <Label htmlFor="on">Prender</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="false" id="off" />
+                  <Label htmlFor="off">Apagar</Label>
+                </div>
+              </RadioGroup>
+            </div>
           <Button onClick={handleAddSchedule}>Añadir Horario</Button>
         </CardContent>
       </Card>
     </div>
   );
 }
+
