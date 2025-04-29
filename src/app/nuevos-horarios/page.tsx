@@ -102,7 +102,7 @@ export default function NuevosHorariosPage() {
       const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
       const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
       if (timeDifference <= 60000) {
-        setShowAlert(true); // Add this line
+        //setShowAlert(true); // Add this line
         toast({
           title: 'Error',
           description:
