@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
+import { useEffect, useState, useRef} from 'react';
+import { initializeApp } from 'firebase/app'; // Importa initializeApp
+import { format, parse } from 'date-fns';
 import { getDatabase, ref, onValue, remove } from 'firebase/database';
 import {
   Card,
@@ -14,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Trash } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { useToast } from '@/hooks/use-toast';
-
+import { set } from 'firebase/database'; // Importa la función set
 // Define interfaces for type safety
 interface Evento {
   descripcion: string;
@@ -36,7 +37,7 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
-
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -45,21 +46,62 @@ export default function DispositivosPage() {
   const [eventos, setEventos] = useState<Eventos | null>(null);
   const { toast } = useToast();
   const swipeItemsRef = useRef(new Map());
-
   useEffect(() => {
+    // Referencia al nodo 'dispositivos' en la base de datos
     const dispositivosRef = ref(db, 'dispositivos');
-    onValue(dispositivosRef, snapshot => {
+    // Suscripción a cambios en 'dispositivos'
+    const unsubscribeDispositivos = onValue(dispositivosRef, snapshot => {
       const data = snapshot.val();
-      setDispositivos(data);
+      if (data) {
+        const now = Date.now(); // Milisegundos
+        const updatedData: { [key: string]: any } = {};
+        let hasUpdates = false;
+    
+        Object.entries(data).forEach(([id, dispositivo]) => {
+          const UltimoVistoString = dispositivo.Ultimo_Visto;
+          const dateFormat = 'dd-MM-yyyy HH:mm'; // Asegúrate que esto matchea EXACTAMENTE
+          const parsedDate = parse(UltimoVistoString, dateFormat, new Date());
+          const UltimoVistoTimestamp = parsedDate.getTime(); // En milisegundos
+          const isOffline = now - UltimoVistoTimestamp > 60 * 1000; // 10 segundos en ms
+          const estadoConexion = isOffline ? 'OffLine' : 'OnLine';
+    
+          if (dispositivo.Estado_Conexion !== estadoConexion) {
+            hasUpdates = true;
+            updatedData[id] = {
+              ...dispositivo,
+              Estado_Conexion: estadoConexion,
+            };
+          } else {
+            updatedData[id] = dispositivo;
+          }
+        });
+    
+        if (hasUpdates) {
+          setDispositivos(updatedData);
+          Object.entries(updatedData).forEach(([id, dispositivo]) => {
+            const dispositivoRef = ref(db, `dispositivos/${id}`);
+            set(dispositivoRef, dispositivo).catch(error => {
+              console.error("Error updating device status:", error);
+            });
+          });
+        } else {
+          setDispositivos(data);
+        }
+      } else {
+        setDispositivos({});
+      }
     });
 
     const eventosRef = ref(db, 'eventos');
     onValue(eventosRef, snapshot => {
       const data = snapshot.val();
       setEventos(data);
-    });
-  }, []);
 
+    });
+    // Limpieza de la suscripción al desmontar el componente
+    return () => { unsubscribeDispositivos() };
+  }, []);
+  // Función para eliminar un evento
   const deleteEvent = (dispositivoId: string, eventoId: string) => {
     const eventoRef = ref(db, `eventos/${dispositivoId}/${eventoId}`);
     remove(eventoRef)
@@ -89,7 +131,7 @@ export default function DispositivosPage() {
       });
   };
 
-  interface EventItemProps {
+  interface EventItemProps {// Define las propiedades del componente EventItem
     dispositivoId: string;
     eventoId: string;
     eventoData: Evento;
@@ -212,7 +254,7 @@ export default function DispositivosPage() {
           </Card>
         ))
       ) : (
-        <p>Cargando eventos...</p>
+        <p>No Hay Evetos por el Momento...</p>
       )}
     </div>
   );

@@ -59,9 +59,6 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* Header con iconos compacto */}
         <header className="fixed top-0 left-0 w-full bg-secondary text-secondary-foreground px-3 py-2 flex items-center justify-between z-10 shadow-md">
-          {/* Logo o título */}
-          {/*<div className="text-sm font-medium"></div>*/}
-          
           {/* Menú principal con iconos */}
           <nav className="flex items-center space-x-4">
             <Link
@@ -108,7 +105,7 @@ export default function RootLayout({
         </header>
 
         {/* Contenido principal */}
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ marginTop: '55px' }}>
           {children}
         </div>
 
