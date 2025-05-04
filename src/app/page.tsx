@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import {Trash, Calendar, Moon, Sun, Loader2, X} from 'lucide-react';
+import {Trash, Calendar, Moon, Sun, Loader2, X, CheckCircle} from 'lucide-react';
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, remove, get } from 'firebase/database';
@@ -33,8 +33,8 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import '../../styles.css'; // Importa el archivo CSS
-import {CheckCircle} from 'lucide-react';
-import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger} from '@/components/ui/sheet';
+
+import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter} from '@/components/ui/sheet';
 
 
 const firebaseConfig = {
@@ -61,6 +61,7 @@ const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const { toast } = useToast();
+  const [showAlert, setShowAlert] = useState(false);
   const [serviceStatus, setServiceStatus] = useState<boolean | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false); // Estado para controlar la Sheet
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(
@@ -70,32 +71,43 @@ export default function Home() {
   // Función para actualizar la versión en Firebase
   const updateVersion = async () => {
     const versionRef = ref(db, 'version');
-    const snapshot = await get(versionRef);
-    const currentVersion = snapshot.val();
+    try {
+        const snapshot = await get(versionRef);
+        const currentVersion = snapshot.val();
 
-    let newVersion;
-    do {
-      newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
-    } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+        let newVersion;
+        do {
+        newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+        } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
 
-    await set(versionRef, newVersion); // Actualiza la versión en Firebase
+        await set(versionRef, newVersion); // Actualiza la versión en Firebase
+    } catch (error) {
+        console.error("Error updating version:", error);
+        // Optionally, inform the user about the error
+        toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la versión del sistema.',
+        variant: 'destructive',
+        });
+    }
   };
+
 
   useEffect(() => {
     const serviceStatusRef = ref(db, 'status_arduino');
-    const unsubscribe = onValue(serviceStatusRef, snapshot => {
+    const unsubscribeStatus = onValue(serviceStatusRef, snapshot => {
       const status = snapshot.val();
       setServiceStatus(status);
     });
 
     const schedulesRef = ref(db, 'horarios');
-    onValue(schedulesRef, snapshot => {
+    const unsubscribeSchedules = onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
       if (data) {
-        const schedulesList: Schedule[] = Object.entries(data).map(([key, value]) => ({
+        const schedulesList: Schedule[] = Object.entries(data).map(([key, value]: [string, any]) => ({ // Explicitly type value
           id: key,
           time: value.time,
-          days: value.days || [],
+          days: value.days || [], // Ensure days is always an array
           status: value.status,
         }));
         setSchedules(schedulesList);
@@ -104,37 +116,51 @@ export default function Home() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeStatus();
+      unsubscribeSchedules();
+    } ;
   }, []);
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
-    set(scheduleRef, {
-      time: schedules.find(s => s.id === id)?.time || '',
-      days: schedules.find(s => s.id === id)?.days || [],
-      status: !currentStatus,
-    })
-      .then(() => {
-        setSchedules(prevSchedules =>
-          prevSchedules.map(schedule =>
-            schedule.id === id ? { ...schedule, status: !schedule.status } : schedule
-          )
-        );
-        toast({
-          title: 'Éxito',
-          description: 'Estado del horario actualizado correctamente.',
+    const schedule = schedules.find(s => s.id === id);
+
+    if (schedule) {
+        const newStatus = !currentStatus;
+        // Use set with the entire object structure
+        set(scheduleRef, {
+            time: schedule.time,
+            days: schedule.days,
+            status: newStatus,
+        }).then(() => {
+            setSchedules((prevSchedules) =>
+                prevSchedules.map((s) =>
+                    s.id === id ? { ...s, status: newStatus } : s
+                )
+            );
+            toast({
+                title: 'Éxito',
+                description: 'Estado del horario actualizado correctamente.',
+            });
+            // Actualizar la versión en Firebase
+            updateVersion();
+        }).catch(error => {
+            toast({
+                title: 'Error',
+                description: 'Fallo al actualizar el estado del horario: ' + error.message,
+                variant: 'destructive',
+            });
         });
-        // Actualizar la versión en Firebase
-        updateVersion();
-      })
-      .catch(error => {
+    } else {
         toast({
-          title: 'Error',
-          description: 'Fallo al actualizar el estado del horario: ' + error.message,
-          variant: 'destructive',
+            title: 'Error',
+            description: 'No se encontró el horario para actualizar.',
+            variant: 'destructive',
         });
-      });
-  };
+    }
+};
+
 
   const handleDeleteSchedule = (id: string) => {
     const scheduleRef = ref(db, `horarios/${id}`);
@@ -158,10 +184,13 @@ export default function Home() {
   };
 
    const toggleServiceStatus = () => {
+     if (serviceStatus === null) return; // Do nothing if status is still loading
+
     const newStatus = !serviceStatus;
     const serviceStatusRef = ref(db, 'status_arduino');
     set(serviceStatusRef, newStatus)
       .then(() => {
+        setServiceStatus(newStatus); // Update local state immediately
         toast({
           title: 'Éxito',
           description: `Servicio ${newStatus ? 'activado' : 'desactivado'} correctamente.`,
@@ -177,12 +206,14 @@ export default function Home() {
         });
       });
   };
-  const onOpenChange = () => {
-    setSheetOpen(!sheetOpen);
+  const onOpenChange = (open: boolean) => { // Explicitly type 'open' as boolean
+    setSheetOpen(open);
   };
 
+
   return (
-    <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
+    <div className="m-5 flex flex-col items-center justify-center min-h-[calc(100vh-110px)] py-2">
+
 
       {/* Indicador de estado del servicio */}
       <Card className="mb-4 w-full max-w-md">
@@ -209,18 +240,18 @@ export default function Home() {
       </Card>
 
       <Separator className="my-4" />
-      
+
       {/* Parte De Mis Horario */}
       <div className="w-full max-w-md">
         <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
         {schedules.length === 0 ? (
-          <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
+           <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
         ) : (
-          <div className="grid gap-4">
+           <div className="grid gap-4">
             {schedules.map(schedule => (
               <Card key={schedule.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle style={{ color: schedule.status ? 'green' : 'red' }}>
+                  <CardTitle style={{ color: schedule.status ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}>
                     {schedule.time}{' '}
                     <span className="text-sm font-normal text-muted-foreground">
                       ({schedule.id})
@@ -234,12 +265,12 @@ export default function Home() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        ¿Estás seguro?
+                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                         <AlertDialogDescription>
+                           Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
+                           proceder?
+                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogDescription>
-                        Esta acción eliminará el horario permanentemente. ¿Estás seguro de que quieres
-                        proceder?
-                      </AlertDialogDescription>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDeleteSchedule(schedule.id)}>
@@ -250,17 +281,17 @@ export default function Home() {
                   </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {schedule.days && schedule.days.length > 0 ? (
-                      schedule.days.map(day => (
-                        <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
-                          {day}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Días: No especificado</p>
-                    )}
-                  </div>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {schedule.days && schedule.days.length > 0 ? (
+                        schedule.days.map(day => (
+                          <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
+                            {day}
+                          </Badge>
+                        ))
+                      ) : (
+                         <p className="text-sm text-muted-foreground">Días: No especificado</p>
+                      )}
+                   </div>
                   <div className="flex items-center space-x-2 mt-2">
                     <Label htmlFor={`status-${schedule.id}`}>
                       {schedule.status ? 'Prende' : 'Apaga'}
@@ -277,6 +308,8 @@ export default function Home() {
           </div>
         )}
       </div>
+
+
     </div>
   );
 }
