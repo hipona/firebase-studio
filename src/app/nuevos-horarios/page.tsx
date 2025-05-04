@@ -74,16 +74,27 @@ export default function NuevosHorariosPage() {
 
   const updateVersion = async () => {
     const versionRef = ref(db, 'version');
-    const snapshot = await get(versionRef);
-    const currentVersion = snapshot.val();
+    try {
+      const snapshot = await get(versionRef);
+      const currentVersion = snapshot.val();
 
-    let newVersion;
-    do {
-      newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
-    } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+      let newVersion;
+      do {
+        newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+      } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
 
-    await set(versionRef, newVersion); // Actualiza la versión en Firebase
+      await set(versionRef, newVersion); // Actualiza la versión en Firebase
+    } catch (error) {
+      console.error("Error updating version:", error);
+      // Optionally, inform the user about the error
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la versión del sistema.',
+        variant: 'destructive',
+      });
+    }
   };
+
 
   const handleDayToggle = (day: string) => {
     setNewDays(prevDays =>
@@ -97,23 +108,38 @@ export default function NuevosHorariosPage() {
       return;
     }
 
-    const newScheduleTime = parse(newTime, 'HH:mm', new Date());
-    for (const schedule of schedules) {
-      const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
-      const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
-      if (timeDifference <= 60000) {
-        //setShowAlert(true); // Add this line
-        toast({
-          title: 'Error',
-          description:
-            'El nuevo horario está demasiado cerca de un horario existente. Por favor, elige una hora con al menos un minuto de diferencia.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
+    const schedulesRef = ref(db, 'horarios');
     try {
+      const snapshot = await get(schedulesRef);
+      const existingSchedulesData = snapshot.val() || {};
+      const existingSchedules: Schedule[] = Object.entries(existingSchedulesData).map(([key, value]: [string, any]) => ({
+        id: key,
+        ...value,
+      }));
+
+      const newScheduleTime = parse(newTime, 'HH:mm', new Date());
+      for (const schedule of existingSchedules) {
+        // Ensure schedule.time is valid before parsing
+        if (schedule.time && typeof schedule.time === 'string' && schedule.time.match(/^\d{2}:\d{2}$/)) {
+          const existingScheduleTime = parse(schedule.time, 'HH:mm', new Date());
+          const timeDifference = Math.abs(newScheduleTime.getTime() - existingScheduleTime.getTime());
+
+          // Check if times are too close (within 60 seconds)
+          if (timeDifference < 60000) {
+            toast({
+              title: 'Conflicto de Horario',
+              description: `El horario ${newTime} está demasiado cerca de ${schedule.time}. Debe haber al menos 1 minuto de diferencia.`,
+              variant: 'destructive',
+            });
+            return; // Stop the process
+          }
+        } else {
+          console.warn(`Invalid time format for schedule ${schedule.id}: ${schedule.time}`);
+          // Optionally handle invalid time formats if necessary
+        }
+      }
+
+
       const nextId = await getNextScheduleId();
       const newScheduleRef = ref(db, `horarios/${nextId}`);
       await set(newScheduleRef, {
@@ -137,8 +163,10 @@ export default function NuevosHorariosPage() {
         description: 'Fallo al añadir el horario: ' + error.message,
         variant: 'destructive',
       });
+      console.error("Error adding schedule:", error); // Log detailed error
     }
   };
+
 
   const getNextScheduleId = async () => {
     const schedulesRef = ref(db, 'horarios');
@@ -159,7 +187,7 @@ export default function NuevosHorariosPage() {
   };
 
   return (
-    <div className="m-1 flex flex-col items-center justify-center min-h-screen py-2">
+    <div className="m-5 flex flex-col items-center justify-center min-h-[calc(100vh-110px)] py-2">
       {/* Alert Dialog for missing time and days */}
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
         <AlertDialogContent>
@@ -176,53 +204,72 @@ export default function NuevosHorariosPage() {
       </AlertDialog>
 
       {/* Parte Añadir Nuevo Horario */}
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Añadir Nuevo Horario</CardTitle>
-          <CardDescription>Define la hora y los días a planificar.</CardDescription>
+      <Card className="w-full max-w-md shadow-lg rounded-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Selecciona Fecha y Hora</CardTitle>
+          <CardDescription>Configura tu nuevo horario.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-6 p-6">
+          {/* Day Selection */}
           <div className="grid gap-2">
-            <Label htmlFor="time">Horario:</Label>
-            <Input
-              id="time"
-              type="time"
-              value={newTime}
-              onChange={e => setNewTime(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label>Días:</Label>
-            <div className="flex flex-wrap gap-2">
+            <Label className="text-sm font-medium text-center mb-2">Días de la Semana</Label>
+            <div className="flex flex-wrap justify-center gap-2">
               {daysOfWeek.map(day => (
                 <Button
                   key={day}
                   variant={newDays.includes(day) ? 'default' : 'outline'}
                   onClick={() => handleDayToggle(day)}
-                  className={newDays.includes(day) ? 'bg-primary text-primary-foreground' : ''}
+                  className={`rounded-md px-4 py-2 text-sm ${newDays.includes(day) ? 'bg-primary text-primary-foreground' : 'border border-border'}`}
+                  size="sm"
                 >
                   {day}
                 </Button>
               ))}
             </div>
           </div>
+
+          {/* Time Input */}
+          <div className="grid gap-2">
+            <Label htmlFor="time" className="text-sm font-medium text-center">Hora (HH:MM)</Label>
+            <Input
+              id="time"
+              type="time"
+              value={newTime}
+              onChange={e => setNewTime(e.target.value)}
+              className="text-center text-lg py-2 border rounded-md focus:ring-primary focus:border-primary"
+            />
+          </div>
+
+          {/* Status Selection */}
            <div className="grid gap-2">
-              <Label>Estado:</Label>
-              <RadioGroup defaultValue={newStatus.toString()} className="flex gap-2" onValueChange={(value) => setNewStatus(value === 'true')}>
+              <Label className="text-sm font-medium text-center">Acción</Label>
+              <RadioGroup
+                defaultValue={newStatus.toString()}
+                className="flex justify-center gap-4"
+                onValueChange={(value) => setNewStatus(value === 'true')}
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="true" id="on" />
-                  <Label htmlFor="on">Prender</Label>
+                  <Label htmlFor="on" className="text-sm">Prender</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="false" id="off" />
-                  <Label htmlFor="off">Apagar</Label>
+                  <Label htmlFor="off" className="text-sm">Apagar</Label>
                 </div>
               </RadioGroup>
             </div>
-          <Button onClick={handleAddSchedule}>Añadir Horario</Button>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+             <Button onClick={() => { /* Add cancel logic if needed, e.g., navigate back */ }} variant="outline" className="w-full py-3 rounded-full">
+                Cancelar
+             </Button>
+             <Button onClick={handleAddSchedule} className="w-full py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+                Confirmar
+             </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-
