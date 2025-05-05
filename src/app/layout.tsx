@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter,
 } from '@/components/ui/sheet';
 import {Button} from '@/components/ui/button';
 import {
@@ -45,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
+  const [showAlert, setShowAlert] = useState(false); // Although defined, not used in layout. Kept for potential future use.
 
   useEffect(() => {
     if (isDarkMode) {
@@ -57,40 +58,9 @@ export default function RootLayout({
 
   return (
     <html lang="es">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Header con iconos compacto */}
-        <header className="fixed top-0 left-0 w-full bg-secondary text-secondary-foreground px-3 py-2 flex items-center justify-between z-10 shadow-md">
-          {/* Menú principal con iconos */}
-          <nav className="flex items-center space-x-4">
-            <Link
-              href="/"
-              className="text-xs flex flex-col items-center p-1 rounded-md hover:bg-primary/10 transition-colors"
-              title="Inicio"
-              prefetch
-            >
-              <HomeIcon className="h-5 w-5" />
-              <span className="text-xs">Inicio</span>
-            </Link>
-            <Link
-              href="/nuevos-horarios"
-              className="text-xs flex flex-col items-center p-1 rounded-md hover:bg-primary/10 transition-colors"
-              title="Nuevo Horario"
-              prefetch
-            >
-              <ClockIcon className="h-5 w-5" />
-              <span className="text-xs">Horario</span>
-            </Link>
-            <Link
-              href="/dispositivos"
-              className="text-xs flex flex-col items-center p-1 rounded-md hover:bg-primary/10 transition-colors"
-              title="Eventos"
-              prefetch
-            >
-              <Calendar className="h-5 w-5" />
-              <span className="text-xs">Eventos</span>
-            </Link>
-          </nav>
-
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+        {/* Header just for Dark Mode Toggle */}
+        <header className="fixed top-0 left-0 w-full bg-secondary text-secondary-foreground px-3 py-2 flex items-center justify-end z-10 shadow-md">
           {/* Botón de modo oscuro/claro */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -106,15 +76,43 @@ export default function RootLayout({
         </header>
 
         {/* Contenido principal */}
-        <div style={{ marginTop: '55px' }}>
+        <main className="flex-grow" style={{ paddingTop: '55px', paddingBottom: '70px' }}> {/* Adjusted padding */}
           {children}
-        </div>
+        </main>
 
-
-        {/* Pie de página */}
-        <footer className="bg-secondary text-secondary-foreground p-2 text-center text-xs fixed bottom-0 left-0 w-full">
-          Realizado por Mideas Sistemas
+        {/* Bottom Navigation Footer */}
+        <footer className="fixed bottom-0 left-0 w-full bg-secondary text-secondary-foreground shadow-md z-10 border-t border-border">
+          <nav className="flex items-center justify-around h-16">
+            <Link
+              href="/"
+              className="flex flex-col items-center justify-center text-xs p-2 rounded-md hover:bg-primary/10 transition-colors flex-1 text-center"
+              title="Inicio"
+              prefetch
+            >
+              <HomeIcon className="h-5 w-5 mb-1" />
+              <span>Inicio</span>
+            </Link>
+            <Link
+              href="/nuevos-horarios"
+              className="flex flex-col items-center justify-center text-xs p-2 rounded-md hover:bg-primary/10 transition-colors flex-1 text-center"
+              title="Nuevo Horario"
+              prefetch
+            >
+              <ClockIcon className="h-5 w-5 mb-1" />
+              <span>Horario</span>
+            </Link>
+            <Link
+              href="/dispositivos"
+              className="flex flex-col items-center justify-center text-xs p-2 rounded-md hover:bg-primary/10 transition-colors flex-1 text-center"
+              title="Eventos"
+              prefetch
+            >
+              <Calendar className="h-5 w-5 mb-1" />
+              <span>Eventos</span>
+            </Link>
+          </nav>
         </footer>
+
       </body>
     </html>
   );

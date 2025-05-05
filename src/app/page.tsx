@@ -36,6 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import '../../styles.css'; // Importa el archivo CSS
 
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter} from '@/components/ui/sheet';
+import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
 
 
 const firebaseConfig = {
@@ -69,29 +70,7 @@ export default function Home() {
     null
   );
 
-  // Función para actualizar la versión en Firebase
-  const updateVersion = async () => {
-    const versionRef = ref(db, 'version');
-    try {
-        const snapshot = await get(versionRef);
-        const currentVersion = snapshot.val();
 
-        let newVersion;
-        do {
-        newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
-        } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
-
-        await set(versionRef, newVersion); // Actualiza la versión en Firebase
-    } catch (error) {
-        console.error("Error updating version:", error);
-        // Optionally, inform the user about the error
-        toast({
-        title: 'Error',
-        description: 'No se pudo actualizar la versión del sistema.',
-        variant: 'destructive',
-        });
-    }
-  };
 
 
   useEffect(() => {
@@ -111,6 +90,17 @@ export default function Home() {
           days: value.days || [], // Ensure days is always an array
           status: value.status,
         }));
+        // Sort schedules by time
+        schedulesList.sort((a, b) => {
+          try {
+            const timeA = parse(a.time, 'HH:mm', new Date());
+            const timeB = parse(b.time, 'HH:mm', new Date());
+            return timeA.getTime() - timeB.getTime();
+          } catch (e) {
+            console.error("Error parsing time for sorting:", e);
+            return 0; // Keep original order if parsing fails
+          }
+        });
         setSchedules(schedulesList);
       } else {
         setSchedules([]);
@@ -121,7 +111,7 @@ export default function Home() {
       unsubscribeStatus();
       unsubscribeSchedules();
     } ;
-  }, []);
+  }, [db]); // Added db to dependency array
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
@@ -135,17 +125,17 @@ export default function Home() {
             days: schedule.days,
             status: newStatus,
         }).then(() => {
-            setSchedules((prevSchedules) =>
-                prevSchedules.map((s) =>
-                    s.id === id ? { ...s, status: newStatus } : s
-                )
-            );
+            // setSchedules((prevSchedules) => // No need to manually update state, onValue will trigger
+            //     prevSchedules.map((s) =>
+            //         s.id === id ? { ...s, status: newStatus } : s
+            //     )
+            // );
             toast({
                 title: 'Éxito',
                 description: 'Estado del horario actualizado correctamente.',
             });
             // Actualizar la versión en Firebase
-            updateVersion();
+            updateVersion(db);
         }).catch(error => {
             toast({
                 title: 'Error',
@@ -171,9 +161,9 @@ export default function Home() {
           title: 'Éxito',
           description: 'Horario eliminado exitosamente.',
         });
-        setSchedules(prevSchedules => prevSchedules.filter(schedule => schedule.id !== id));
+        // setSchedules(prevSchedules => prevSchedules.filter(schedule => schedule.id !== id)); // No need to manually update state
         // Actualizar la versión en Firebase
-        updateVersion();
+        updateVersion(db);
       })
       .catch(error => {
         toast({
@@ -191,13 +181,13 @@ export default function Home() {
     const serviceStatusRef = ref(db, 'status_arduino');
     set(serviceStatusRef, newStatus)
       .then(() => {
-        setServiceStatus(newStatus); // Update local state immediately
+        // setServiceStatus(newStatus); // Update local state immediately // No need to manually update state
         toast({
           title: 'Éxito',
           description: `Servicio ${newStatus ? 'activado' : 'desactivado'} correctamente.`,
         });
         // Actualizar la versión en Firebase
-        updateVersion();
+        updateVersion(db);
       })
       .catch(error => {
         toast({
@@ -213,69 +203,70 @@ export default function Home() {
 
 
   return (
-    <div className="m-5 flex flex-col items-center justify-center min-h-[calc(100vh-110px)] py-2">
+    <div className="m-5 flex flex-col items-center justify-center min-h-[calc(100vh-125px)] py-2"> {/* Adjusted min-height */}
 
       {/* Alert Dialog for missing time and days */}
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-             <AlertDialogTitle>Error</AlertDialogTitle>
-             <AlertDialogDescription>
-               Por favor, selecciona al menos un día y una hora para crear el horario.
-             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowAlert(false)}>Aceptar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+               <AlertDialogTitle>Error</AlertDialogTitle>
+               <AlertDialogDescription>
+                 Por favor, selecciona al menos un día y una hora para crear el horario.
+               </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setShowAlert(false)}>Aceptar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       {/* Indicador de estado del servicio */}
-      <Card className="mb-4 w-full max-w-md">
+      <Card className="mb-4 w-full max-w-md shadow-lg rounded-lg">
         <CardHeader>
           <CardTitle>Estado del dispositivo</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <div className="flex items-center">
-            {serviceStatus === true && (
-              <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-            )}
-            {serviceStatus === false && (
-              <X className="h-6 w-6 text-red-500 mr-2" />
-            )}
-            {serviceStatus === null && (
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            )}
-            {serviceStatus !== null && (
-              <span>{serviceStatus ? 'Activo' : 'Inactivo'}</span>
-            )}
+        <CardContent className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-2">
+             <span
+              className={`h-4 w-4 rounded-full ${
+                serviceStatus === true ? 'bg-green-500' : serviceStatus === false ? 'bg-red-500' : 'bg-gray-400 animate-pulse'
+              }`}
+            ></span>
+            <span className="text-sm font-medium">
+              {serviceStatus === true ? 'Activo' : serviceStatus === false ? 'Inactivo' : 'Cargando...'}
+            </span>
           </div>
-          <Switch checked={!!serviceStatus} onCheckedChange={toggleServiceStatus} />
+          <Switch
+             id="service-status-switch" // Add an id for the label to reference
+             checked={serviceStatus ?? false} // Use checked instead of defaultChecked for controlled component
+             onCheckedChange={toggleServiceStatus}
+             disabled={serviceStatus === null} // Disable while loading
+             aria-label="Activar o desactivar servicio"
+           />
         </CardContent>
       </Card>
 
-      <Separator className="my-4" />
 
       {/* Parte De Mis Horario */}
       <div className="w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-2">Mis Horarios</h2>
+        <h2 className="text-xl font-semibold mb-4">Mis Horarios</h2>
         {schedules.length === 0 ? (
-           <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
+           <p className="text-muted-foreground text-center">No hay horarios añadidos aún.</p>
         ) : (
-           <div className="grid gap-2">
+           <div className="grid gap-4">
             {schedules.map(schedule => (
-              <Card key={schedule.id}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle style={{ color: schedule.status ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}>
-                    {schedule.time}{' '}
-                    <Label htmlFor={`status-${schedule.id}`}>
-                      {schedule.status ? 'Prende' : 'Apaga'}
-                    </Label>
+              <Card key={schedule.id} className="shadow-md rounded-lg overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 bg-card">
+                  <CardTitle className={`text-lg font-semibold ${schedule.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {schedule.time}
                   </CardTitle>
-                  <AlertDialog>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${schedule.status ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}`}>
+                      {schedule.status ? 'Prende' : 'Apaga'}
+                    </span>
+                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Trash className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -295,12 +286,12 @@ export default function Home() {
                     </AlertDialogContent>
                   </AlertDialog>
                 </CardHeader>
-                <CardContent>
-                    <div className="flex flex-wrap gap-1 mb-1">
+                <CardContent className="p-4 pt-0">
+                    <div className="flex flex-wrap gap-1.5 mt-2">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
-                          <Badge key={day} className={schedule.status ? 'bg-green-200 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-green-900 dark:text-green-600' : 'bg-red-200 text-red-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-red-900 dark:text-red-600'}>
-                            {day}
+                          <Badge key={day} variant="secondary" className="text-[0.9rem] rounded-full h-6 w-6 flex items-center justify-center p-0"> {/* Adjusted badge styling */}
+                            {day.substring(0, 1)} {/* Display only the first letter */}
                           </Badge>
                         ))
                       ) : (
@@ -314,16 +305,16 @@ export default function Home() {
         )}
       </div>
         {/* Botón flotante */}
-        <Link href="/nuevos-horarios" passHref>
+        {/* Solo mostrar en la página de inicio (ya está implícito por estar en page.tsx) */}
+        <Link href="/nuevos-horarios" passHref prefetch>
           <Button
-            className="fixed bottom-10 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 hover:bg-blue-600"
+            className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 hover:bg-accent group" // Added group class
             size="icon"
             title="Nuevo Horario"
           >
-            <Clock className="h-15 w-15 transition-transform duration-300 group-hover:rotate-12" />
+            <Clock className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" /> {/* Adjusted icon size */}
           </Button>
         </Link>
-
     </div>
   );
 }
