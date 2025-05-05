@@ -247,15 +247,15 @@ export default function Home() {
         {schedules.length === 0 ? (
            <p className="text-muted-foreground">No hay horarios añadidos aún.</p>
         ) : (
-           <div className="grid gap-4">
+           <div className="grid gap-2">
             {schedules.map(schedule => (
               <Card key={schedule.id}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                   <CardTitle style={{ color: schedule.status ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}>
                     {schedule.time}{' '}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      ({schedule.id})
-                    </span>
+                    <Label htmlFor={`status-${schedule.id}`}>
+                      {schedule.status ? 'Prende' : 'Apaga'}
+                    </Label>
                   </CardTitle>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -281,10 +281,10 @@ export default function Home() {
                   </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-wrap gap-1 mb-2">
+                    <div className="flex flex-wrap gap-1 mb-1">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
-                          <Badge key={day} className={schedule.status ? 'custom-badge-green' : 'custom-badge-red'}>
+                          <Badge key={day} className={schedule.status ? 'bg-green-200 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-green-900 dark:text-green-600' : 'bg-red-200 text-red-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-red-900 dark:text-red-600'}>
                             {day}
                           </Badge>
                         ))
@@ -292,16 +292,6 @@ export default function Home() {
                          <p className="text-sm text-muted-foreground">Días: No especificado</p>
                       )}
                    </div>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Label htmlFor={`status-${schedule.id}`}>
-                      {schedule.status ? 'Prende' : 'Apaga'}
-                    </Label>
-                    <Switch
-                      id={`status-${schedule.id}`}
-                      checked={schedule.status}
-                      onCheckedChange={() => handleStatusToggle(schedule.id, schedule.status)}
-                    />
-                  </div>
                 </CardContent>
               </Card>
             ))}

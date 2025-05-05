@@ -3,7 +3,7 @@
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
-import {Calendar, ClockIcon, HomeIcon, Moon, Sun} from 'lucide-react';
+import {Calendar, ClockIcon, HomeIcon, Moon, Sun, Plus} from 'lucide-react'; // Import Plus icon
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {
@@ -15,7 +15,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {Button} from '@/components/ui/button';
-import {Plus} from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -110,8 +109,20 @@ export default function RootLayout({
           {children}
         </div>
 
+        {/* Botón flotante */}
+        <Link href="/nuevos-horarios" passHref>
+          <Button
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
+            size="icon"
+            title="Añadir Nuevo Horario"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </Link>
+
+
         {/* Pie de página */}
-        <footer className="bg-secondary text-secondary-foreground p-2 text-center text-xs">
+        <footer className="bg-secondary text-secondary-foreground p-2 text-center text-xs fixed bottom-0 left-0 w-full">
           Realizado por Mideas Sistemas
         </footer>
       </body>

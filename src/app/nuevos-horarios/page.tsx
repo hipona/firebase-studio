@@ -219,7 +219,7 @@ export default function NuevosHorariosPage() {
                   key={day}
                   variant={newDays.includes(day) ? 'default' : 'outline'}
                   onClick={() => handleDayToggle(day)}
-                  className={`rounded-md px-4 py-2 text-sm ${newDays.includes(day) ? 'bg-primary text-primary-foreground' : 'border border-border'}`}
+                  className={`rounded-md px-2 py-2 text-sm ${newDays.includes(day) ? 'bg-primary text-primary-foreground' : 'border border-border'}`}
                   size="sm"
                 >
                   {day}
