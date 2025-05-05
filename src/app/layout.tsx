@@ -4,8 +4,9 @@ import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
 import {Calendar, ClockIcon, HomeIcon, Moon, Sun, Plus} from 'lucide-react'; // Import Plus icon
+import { Clock } from "lucide-react";
 import {useEffect, useState} from 'react';
-import Link from 'next/link';
+import Link from 'next/link'; // Import Link
 import {
   Sheet,
   SheetContent,
@@ -108,17 +109,6 @@ export default function RootLayout({
         <div style={{ marginTop: '55px' }}>
           {children}
         </div>
-
-        {/* Botón flotante */}
-        <Link href="/nuevos-horarios" passHref>
-          <Button
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
-            size="icon"
-            title="Añadir Nuevo Horario"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </Link>
 
 
         {/* Pie de página */}
