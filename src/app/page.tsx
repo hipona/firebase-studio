@@ -48,8 +48,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if it hasn't been initialized yet
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+} catch (e) {
+  console.error('Firebase initialization error:', e);
+  // Handle the error appropriately, maybe show a message to the user
+}
 const db = getDatabase(app);
+
 
 type Schedule = {
   id: string;
@@ -64,7 +72,7 @@ export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const { toast } = useToast();
   const [showAlert, setShowAlert] = useState(false);
-  const [serviceStatus, setServiceStatus] = useState<boolean | null>(null);
+  // Removed serviceStatus state as it will be managed in layout
   const [sheetOpen, setSheetOpen] = useState(false); // Estado para controlar la Sheet
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(
     null
@@ -74,11 +82,7 @@ export default function Home() {
 
 
   useEffect(() => {
-    const serviceStatusRef = ref(db, 'status_arduino');
-    const unsubscribeStatus = onValue(serviceStatusRef, snapshot => {
-      const status = snapshot.val();
-      setServiceStatus(status);
-    });
+    // Removed serviceStatus listener as it's now in layout
 
     const schedulesRef = ref(db, 'horarios');
     const unsubscribeSchedules = onValue(schedulesRef, snapshot => {
@@ -93,9 +97,14 @@ export default function Home() {
         // Sort schedules by time
         schedulesList.sort((a, b) => {
           try {
-            const timeA = parse(a.time, 'HH:mm', new Date());
-            const timeB = parse(b.time, 'HH:mm', new Date());
-            return timeA.getTime() - timeB.getTime();
+            // Ensure times are valid before parsing
+            if (a.time && typeof a.time === 'string' && a.time.match(/^\d{2}:\d{2}$/) &&
+                b.time && typeof b.time === 'string' && b.time.match(/^\d{2}:\d{2}$/)) {
+              const timeA = parse(a.time, 'HH:mm', new Date());
+              const timeB = parse(b.time, 'HH:mm', new Date());
+              return timeA.getTime() - timeB.getTime();
+            }
+            return 0; // Keep original order if parsing fails or times are invalid
           } catch (e) {
             console.error("Error parsing time for sorting:", e);
             return 0; // Keep original order if parsing fails
@@ -108,10 +117,10 @@ export default function Home() {
     });
 
     return () => {
-      unsubscribeStatus();
+      // Removed unsubscribeStatus
       unsubscribeSchedules();
     } ;
-  }, [db]); // Added db to dependency array
+  }, []); // Removed db from dependency array as it's initialized outside
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
     const scheduleRef = ref(db, `horarios/${id}`);
@@ -125,11 +134,6 @@ export default function Home() {
             days: schedule.days,
             status: newStatus,
         }).then(() => {
-            // setSchedules((prevSchedules) => // No need to manually update state, onValue will trigger
-            //     prevSchedules.map((s) =>
-            //         s.id === id ? { ...s, status: newStatus } : s
-            //     )
-            // );
             toast({
                 title: 'Éxito',
                 description: 'Estado del horario actualizado correctamente.',
@@ -161,8 +165,6 @@ export default function Home() {
           title: 'Éxito',
           description: 'Horario eliminado exitosamente.',
         });
-        // setSchedules(prevSchedules => prevSchedules.filter(schedule => schedule.id !== id)); // No need to manually update state
-        // Actualizar la versión en Firebase
         updateVersion(db);
       })
       .catch(error => {
@@ -174,36 +176,15 @@ export default function Home() {
       });
   };
 
-   const toggleServiceStatus = () => {
-     if (serviceStatus === null) return; // Do nothing if status is still loading
+  // Removed toggleServiceStatus function as it's now in layout
 
-    const newStatus = !serviceStatus;
-    const serviceStatusRef = ref(db, 'status_arduino');
-    set(serviceStatusRef, newStatus)
-      .then(() => {
-        // setServiceStatus(newStatus); // Update local state immediately // No need to manually update state
-        toast({
-          title: 'Éxito',
-          description: `Servicio ${newStatus ? 'activado' : 'desactivado'} correctamente.`,
-        });
-        // Actualizar la versión en Firebase
-        updateVersion(db);
-      })
-      .catch(error => {
-        toast({
-          title: 'Error',
-          description: 'Fallo al actualizar el estado del servicio: ' + error.message,
-          variant: 'destructive',
-        });
-      });
-  };
-  const onOpenChange = (open: boolean) => { // Explicitly type 'open' as boolean
+   const onOpenChange = (open: boolean) => { // Explicitly type 'open' as boolean
     setSheetOpen(open);
   };
 
 
   return (
-    <div className="m-5 flex flex-col items-center justify-center min-h-[calc(100vh-125px)] py-2"> {/* Adjusted min-height */}
+    <div className="m-1 flex flex-col items-center justify-center min-h-[calc(100vh-125px)] py-2"> {/* Adjusted min-height and margin */}
 
       {/* Alert Dialog for missing time and days */}
        <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
@@ -220,31 +201,7 @@ export default function Home() {
           </AlertDialogContent>
         </AlertDialog>
 
-      {/* Indicador de estado del servicio */}
-      <Card className="mb-4 w-full max-w-md shadow-lg rounded-lg">
-        <CardHeader>
-          <CardTitle>Estado del dispositivo</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-2">
-             <span
-              className={`h-4 w-4 rounded-full ${
-                serviceStatus === true ? 'bg-green-500' : serviceStatus === false ? 'bg-red-500' : 'bg-gray-400 animate-pulse'
-              }`}
-            ></span>
-            <span className="text-sm font-medium">
-              {serviceStatus === true ? 'Activo' : serviceStatus === false ? 'Inactivo' : 'Cargando...'}
-            </span>
-          </div>
-          <Switch
-             id="service-status-switch" // Add an id for the label to reference
-             checked={serviceStatus ?? false} // Use checked instead of defaultChecked for controlled component
-             onCheckedChange={toggleServiceStatus}
-             disabled={serviceStatus === null} // Disable while loading
-             aria-label="Activar o desactivar servicio"
-           />
-        </CardContent>
-      </Card>
+      {/* Removed Indicador de estado del servicio card */}
 
 
       {/* Parte De Mis Horario */}
@@ -304,9 +261,8 @@ export default function Home() {
           </div>
         )}
       </div>
-        {/* Botón flotante */}
-        {/* Solo mostrar en la página de inicio (ya está implícito por estar en page.tsx) */}
-        <Link href="/nuevos-horarios" passHref prefetch>
+      {/* Botón flotante (Only shown on home page implicitly) */}
+      <Link href="/nuevos-horarios" passHref prefetch>
           <Button
             className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 hover:bg-accent group" // Added group class
             size="icon"
@@ -314,7 +270,8 @@ export default function Home() {
           >
             <Clock className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" /> {/* Adjusted icon size */}
           </Button>
-        </Link>
+      </Link>
+      {/* Removed Sheet for adding new schedule, keeping button logic */}
     </div>
   );
 }
