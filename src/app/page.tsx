@@ -261,17 +261,6 @@ export default function Home() {
           </div>
         )}
       </div>
-      {/* Botón flotante (Only shown on home page implicitly) */}
-      <Link href="/nuevos-horarios" passHref prefetch>
-          <Button
-            className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 hover:bg-accent group" // Added group class
-            size="icon"
-            title="Nuevo Horario"
-          >
-            <Clock className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" /> {/* Adjusted icon size */}
-          </Button>
-      </Link>
-      {/* Removed Sheet for adding new schedule, keeping button logic */}
     </div>
   );
 }

@@ -157,11 +157,11 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         {/* Header with Device Status */}
-        <header className="fixed top-0 left-0 w-full bg-primary dark:bg-gray-900 text-primary-foreground dark:text-white px-4 py-3 z-50 shadow-md border-b border-border dark:border-gray-800 transition-colors duration-300 flex items-center justify-between">
+        <header className="fixed top-0 left-0 w-full bg-primary dark:bg-gray-900 text-primary-foreground dark:text-white px-4 py-8 z-50 shadow-md border-b border-border dark:border-gray-800 transition-colors duration-300 flex items-center justify-between rounded-b-3xl">
           {/* Device Status Indicator */}
           <div className="flex items-center space-x-2">
             <span
-              className={`h-3 w-3 rounded-full border-2 border-primary-foreground ${
+              className={`h-6 w-6 rounded-full border-2 border-primary-foreground ${
                 serviceStatus === true
                   ? 'bg-green-400'
                   : serviceStatus === false
@@ -179,10 +179,6 @@ export default function RootLayout({
             </span>
           </div>
 
-          <h1 className="text-xl font-bold text-center absolute left-1/2 transform -translate-x-1/2">
-            Planer
-          </h1>
-
           {/* Spacer to push other items to the right */}
           <div className="flex items-center space-x-4">
             {/* Toggle Switch for Service */}
@@ -194,15 +190,6 @@ export default function RootLayout({
               className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-600" // Custom colors
               aria-label="Activar o desactivar servicio"
             />
-            {/* Dark Mode Toggle Button */}
-            <button
-              onClick={handleThemeToggle}
-              className="bg-secondary text-secondary-foreground p-2 rounded-full"
-              disabled={isDarkMode === null} // Disable until initialized
-              aria-label={isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
-            >
-              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
           </div>
         </header>
 
@@ -244,11 +231,23 @@ export default function RootLayout({
               <span>Eventos</span>
             </Link>
 
-            {/* Removed Dark mode toggle from bottom nav */}
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsDarkMode(!isDarkMode);
+              }}
+              className="flex flex-col items-center justify-center text-xs p-2 rounded-md hover:bg-primary/10 transition-colors flex-1 text-center cursor-pointer"
+              title={isDarkMode ? "Modo claro" : "Modo oscuro"}
+            >
+              {isDarkMode ? (
+                <Sun className="h-5 w-5 mb-1" />
+              ) : (
+                <Moon className="h-5 w-5 mb-1" />
+              )}
+              <span>{isDarkMode ? "Modo claro" : "Modo oscuro"}</span>
+            </Link>
           </nav>
-          <div className="bg-secondary text-secondary-foreground p-2 text-center text-xs border-t border-border">
-            Realizado por Mideas Sistemas
-          </div>
         </footer>
         {/* Alert Dialog */}
         <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
