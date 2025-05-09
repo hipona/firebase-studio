@@ -209,7 +209,7 @@ export default function NuevosHorariosPage() {
           <CardTitle className="text-2xl font-bold">Selecciona Fecha y Hora</CardTitle>
           <CardDescription>Configura tu nuevo horario.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 p-6">
+        <CardContent className="grid gap-6 pt-2">
           {/* Day Selection */}
           <div className="grid gap-2">
             <Label className="text-sm font-medium text-center mb-2">Días de la Semana</Label>

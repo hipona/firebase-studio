@@ -213,7 +213,8 @@ export default function Home() {
            <div className="grid gap-4">
             {schedules.map(schedule => (
               <Card key={schedule.id} className="shadow-md rounded-lg overflow-hidden">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 bg-card">
+               {/* Parte Hora Estado Accione */}
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-4 bg-card">
                   <CardTitle className={`text-lg font-semibold ${schedule.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {schedule.time}
                   </CardTitle>
@@ -243,7 +244,9 @@ export default function Home() {
                     </AlertDialogContent>
                   </AlertDialog>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
+                {/* fin Parte Hora Estado Accione */}
+
+                <CardContent className="pb-1 px-4">
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
