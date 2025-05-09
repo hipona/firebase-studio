@@ -201,9 +201,6 @@ export default function Home() {
           </AlertDialogContent>
         </AlertDialog>
 
-      {/* Removed Indicador de estado del servicio card */}
-
-
       {/* Parte De Mis Horario */}
       <div className="w-full max-w-md">
         <h2 className="text-xl font-semibold mb-4">Mis Horarios</h2>
@@ -212,9 +209,9 @@ export default function Home() {
         ) : (
            <div className="grid gap-4">
             {schedules.map(schedule => (
-              <Card key={schedule.id} className="shadow-md rounded-lg overflow-hidden">
+              <Card key={schedule.id} className="rounded-lg overflow-hidden bg-gray-100 border-gray-100">
                {/* Parte Hora Estado Accione */}
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-4 bg-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1 px-4">
                   <CardTitle className={`text-lg font-semibold ${schedule.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {schedule.time}
                   </CardTitle>
@@ -250,8 +247,8 @@ export default function Home() {
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {schedule.days && schedule.days.length > 0 ? (
                         schedule.days.map(day => (
-                          <Badge key={day} variant="secondary" className="text-[0.9rem] rounded-full h-6 w-6 flex items-center justify-center p-0"> {/* Adjusted badge styling */}
-                            {day.substring(0, 1)} {/* Display only the first letter */}
+                          <Badge key={day} variant="secondary" className="text-[0.8rem] rounded-full h-6 w-6 flex items-center justify-center p-0 bg-amarillo-100"> 
+                            {day.substring(0, 2)}
                           </Badge>
                         ))
                       ) : (

@@ -27,3 +27,10 @@ body {
   padding: 0.2rem 0.3rem;
   border-radius: 5px; /* Bordes redondeados */
 }
+.bg-amarillo-100{
+  background-color: #DFE456;
+}
+
+bg-amarillo-200{
+  background-color: #DFE456;
+}
