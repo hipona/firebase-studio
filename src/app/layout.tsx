@@ -161,7 +161,7 @@ export default function RootLayout({
           {/* Device Status Indicator */}
           <div className="flex items-center space-x-2">
             <span
-              className={`h-6 w-6 rounded-full border-2 border-black-foreground ${
+              className={`h-8 w-8 rounded-full border-2 border-black-foreground ${
                 serviceStatus === true
                   ? 'bg-amarillo-100'
                   : serviceStatus === false
@@ -180,13 +180,12 @@ export default function RootLayout({
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Toggle Switch for Service */}
             <Switch
               id="service-status-switch-header" // Unique ID
               checked={serviceStatus ?? false}
               onCheckedChange={toggleServiceStatus}
               disabled={serviceStatus === null}
-              className="data-[state=checked]:bg-amarillo-200 data-[state=unchecked]:bg-amarillo-200" // Custom colors
+              className="data-[state=checked]:bg-yelow data-[state=unchecked]:bg-yelow" // Custom colors
               aria-label="Activar o desactivar servicio"
             />
           </div>

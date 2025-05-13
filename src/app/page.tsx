@@ -245,12 +245,12 @@ export default function Home() {
            <p className="text-muted-foreground text-center">No hay horarios añadidos aún.</p>
         ) : (
           Object.entries(groupedSchedules).map(([daysKey, schedulesInGroup]) => (
-            <Card key={daysKey} className="rounded-lg overflow-hidden bg-card dark:bg-gray-800 border-border dark:border-gray-700 mb-4 shadow-md">
+            <Card key={daysKey} className="rounded-lg overflow-hidden bg-gray-900/5 dark:bg-gray-800 mb-4">
               <CardHeader className="pb-2 pt-3 px-4 bg-muted/50 dark:bg-gray-700/50">
                 <div className="flex flex-wrap gap-1.5 items-center justify-center">
                   {schedulesInGroup[0]?.days && schedulesInGroup[0].days.length > 0 ? (
                     schedulesInGroup[0].days.map(day => (
-                      <Badge key={day} variant="secondary" className="text-[0.9rem] rounded-full h-7 w-7 flex items-center justify-center p-0 bg-amarillo-100 text-black dark:bg-yellow-600 dark:text-black">
+                      <Badge key={day} variant="secondary" className="text-[0.9rem] rounded-full h-9 w-9 flex items-center justify-center p-0 bg-amarillo-100">
                         {day.substring(0, 2)}
                       </Badge>
                     ))
@@ -261,18 +261,18 @@ export default function Home() {
               </CardHeader>
               <CardContent className="pt-0 pb-1 px-4">
                 {schedulesInGroup.map(schedule => (
-                  <div key={schedule.id} className="flex items-center justify-between py-3 border-t border-border dark:border-gray-700 first:border-t-0">
+                  <div key={schedule.id} className="flex items-center justify-between py-3 border-t">
                     <div className="flex items-center">
                       <CardTitle className={`text-xl font-bold mr-4 ${schedule.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {schedule.time}
                       </CardTitle>
-                      <Badge variant={schedule.status ? 'default' : 'destructive'} className={`${schedule.status ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white text-xs px-2.5 py-1`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${schedule.status ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}`}>
                         {schedule.status ? 'Prende' : 'Apaga'}
-                      </Badge>
+                      </span>
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Button variant="link" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
                           <Trash className="h-5 w-5" />
                         </Button>
                       </AlertDialogTrigger>
@@ -298,16 +298,6 @@ export default function Home() {
           ))
         )}
       </div>
-        {/* Botón flotante */}
-        <Link href="/nuevos-horarios" passHref>
-          <Button
-            className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground group"
-            size="icon"
-            title="Nuevo Horario"
-          >
-            <Clock className="h-7 w-7 transition-transform duration-300 group-hover:rotate-12" />
-          </Button>
-        </Link>
     </div>
   );
 }
