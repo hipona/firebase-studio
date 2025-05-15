@@ -41,6 +41,7 @@ import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
 
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -165,8 +166,8 @@ export default function RootLayout({
                 serviceStatus === true
                   ? 'bg-amarillo-100'
                   : serviceStatus === false
-                    ? 'bg-gray-400'
-                    : 'bg-gray-400 animate-pulse'
+                    ? 'bg-gray-500'
+                    : 'bg-gray-500 animate-pulse'
               }`}
               aria-hidden="true" // Hide decorative element from screen readers
             ></span>
@@ -185,14 +186,14 @@ export default function RootLayout({
               checked={serviceStatus ?? false}
               onCheckedChange={toggleServiceStatus}
               disabled={serviceStatus === null}
-              className="data-[state=checked]:bg-yelow data-[state=unchecked]:bg-yelow" // Custom colors
+              className="data-[state=checked]:bg-grenn data-[state=unchecked]:bg-yelow" // Custom colors
               aria-label="Activar o desactivar servicio"
             />
           </div>
         </header>
 
         {/* Contenido principal */}
-        <main className="flex-grow pt-10 pb-10 bg-gray-20"> {/* Adjusted padding top & bottom */}
+        <main className="flex-grow pt-20 pb-10 bg-gray-20 overflow-y-auto"> {/* Adjusted padding top & bottom */}
           <div className="m-5"> {/* Added margin to main content area */}
             {children}
           </div>
