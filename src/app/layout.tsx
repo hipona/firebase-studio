@@ -41,6 +41,7 @@ import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
 
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -157,16 +158,16 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         {/* Header with Device Status */}
-        <header className="fixed top-0 left-0 w-full bg-gray-200 dark:bg-gray-300 text-black-foreground dark:text-white px-4 py-6 z-50 transition-colors duration-300 flex items-center justify-between rounded-b-3xl">
+        <header className="fixed top-0 left-0 w-full bg-gray-200 dark:bg-secondary text-black-foreground dark:text-white px-4 py-6 z-50 transition-colors duration-300 flex items-center justify-between rounded-b-3xl">
           {/* Device Status Indicator */}
           <div className="flex items-center space-x-2">
             <span
-              className={`h-6 w-6 rounded-full border-2 border-black-foreground ${
+              className={`h-8 w-8 rounded-full border-2 border-black-foreground ${
                 serviceStatus === true
                   ? 'bg-amarillo-100'
                   : serviceStatus === false
-                    ? 'bg-gray-400'
-                    : 'bg-gray-400 animate-pulse'
+                    ? 'bg-gray-500'
+                    : 'bg-gray-500 animate-pulse'
               }`}
               aria-hidden="true" // Hide decorative element from screen readers
             ></span>
@@ -180,20 +181,19 @@ export default function RootLayout({
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Toggle Switch for Service */}
             <Switch
               id="service-status-switch-header" // Unique ID
               checked={serviceStatus ?? false}
               onCheckedChange={toggleServiceStatus}
               disabled={serviceStatus === null}
-              className="data-[state=checked]:bg-amarillo-200 data-[state=unchecked]:bg-amarillo-200" // Custom colors
+              className="data-[state=checked]:bg-grenn data-[state=unchecked]:bg-yelow" // Custom colors
               aria-label="Activar o desactivar servicio"
             />
           </div>
         </header>
 
         {/* Contenido principal */}
-        <main className="flex-grow pt-10 pb-10 bg-gray-20"> {/* Adjusted padding top & bottom */}
+        <main className="flex-grow pt-20 pb-10 bg-gray-20 overflow-y-auto"> {/* Adjusted padding top & bottom */}
           <div className="m-5"> {/* Added margin to main content area */}
             {children}
           </div>

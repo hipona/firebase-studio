@@ -34,3 +34,15 @@ body {
 bg-amarillo-200{
   background-color: #DFE456;
 }
+
+/* Estado no seleccionado */
+.data-\[state\=unchecked\]\:bg-yelow[data-state="unchecked"] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(92, 92, 92);
+}
+
+/* Estado seleccionado */
+.data-\[state\=checked\]\:bg-grenn[data-state="checked"] {
+  --tw-bg-opacity: 1;
+  background-color: rgba(74 222 128); /* verde-400 de Tailwind */
+}
