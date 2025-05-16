@@ -243,7 +243,7 @@ export default function DispositivosPage() {
             <CardContent>
               <ul>
                 {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => (
-                  <EventItem 
+                  <EventItem
                     key={eventoId}
                     dispositivoId={dispositivoId}
                     eventoId={eventoId}

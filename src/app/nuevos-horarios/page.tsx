@@ -204,7 +204,7 @@ export default function NuevosHorariosPage() {
       </AlertDialog>
 
       {/* Parte Añadir Nuevo Horario */}
-      <Card className="w-full max-w-md shadow-lg rounded-lg dark:bg-secondary">
+      <Card className="w-full max-w-md shadow-lg rounded-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Selecciona Fecha y Hora</CardTitle>
           <CardDescription>Configura tu nuevo horario.</CardDescription>
