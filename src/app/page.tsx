@@ -38,6 +38,8 @@ import '../../styles.css'; // Importa el archivo CSS
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter} from '@/components/ui/sheet';
 import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
 
+// Define MY_DEVICE_ID for now. This should be made dynamic in a real application.
+const MY_DEVICE_ID = 'ESP8266_001';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -83,23 +85,23 @@ export default function Home() {
 
 
   useEffect(() => {
-    const serviceStatusRef = ref(db, 'status_arduino');
+    const serviceStatusRef = ref(db, `${MY_DEVICE_ID}/current_status`);
     const unsubscribeStatus = onValue(serviceStatusRef, snapshot => {
       const status = snapshot.val();
       setServiceStatus(status);
     });
 
-    const schedulesRef = ref(db, 'horarios');
+    const schedulesRef = ref(db, `${MY_DEVICE_ID}/horarios_config`);
     const unsubscribeSchedules = onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
       if (data) {
-        const schedulesList: Schedule[] = Object.entries(data).map(([key, value]: [string, any]) => ({ 
+        const schedulesList: Schedule[] = Object.entries(data).map(([key, value]: [string, any]) => ({
           id: key,
           time: value.time,
-          days: value.days || [], 
+          days: value.days || [],
           status: value.status,
         }));
-        
+
         schedulesList.sort((a, b) => {
           try {
             if (a.time && typeof a.time === 'string' && a.time.match(/^\d{2}:\d{2}$/) &&
@@ -108,10 +110,10 @@ export default function Home() {
               const timeB = parse(b.time, 'HH:mm', new Date());
               return timeA.getTime() - timeB.getTime();
             }
-            return 0; 
+            return 0;
           } catch (e) {
             console.error("Error parsing time for sorting:", e);
-            return 0; 
+            return 0;
           }
         });
         setSchedules(schedulesList);
@@ -124,7 +126,7 @@ export default function Home() {
       unsubscribeStatus();
       unsubscribeSchedules();
     } ;
-  }, []); 
+  }, []);
 
   const groupedSchedules = useMemo(() => {
     if (!schedules || schedules.length === 0) return {};
@@ -140,7 +142,7 @@ export default function Home() {
 
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
-    const scheduleRef = ref(db, `horarios/${id}`);
+    const scheduleRef = ref(db, `${MY_DEVICE_ID}/horarios_config/${id}`);
     const schedule = schedules.find(s => s.id === id);
 
     if (schedule) {
@@ -154,7 +156,7 @@ export default function Home() {
                 title: 'Éxito',
                 description: 'Estado del horario actualizado correctamente.',
             });
-            updateVersion(db);
+            updateVersion(db, MY_DEVICE_ID);
         }).catch(error => {
             toast({
                 title: 'Error',
@@ -173,14 +175,14 @@ export default function Home() {
 
 
   const handleDeleteSchedule = (id: string) => {
-    const scheduleRef = ref(db, `horarios/${id}`);
+    const scheduleRef = ref(db, `${MY_DEVICE_ID}/horarios_config/${id}`);
     remove(scheduleRef)
       .then(() => {
         toast({
           title: 'Éxito',
           description: 'Horario eliminado exitosamente.',
         });
-        updateVersion(db);
+        updateVersion(db, MY_DEVICE_ID);
       })
       .catch(error => {
         toast({
@@ -192,17 +194,17 @@ export default function Home() {
   };
 
   const toggleServiceStatus = () => {
-    if (serviceStatus === null || !db) return; 
+    if (serviceStatus === null || !db) return;
 
     const newStatus = !serviceStatus;
-    const serviceStatusRef = ref(db, 'status_arduino');
+    const serviceStatusRef = ref(db, `${MY_DEVICE_ID}/current_status`);
     set(serviceStatusRef, newStatus)
       .then(() => {
         toast({
           title: 'Éxito',
           description: `Servicio ${newStatus ? 'activado' : 'desactivado'} correctamente.`,
         });
-        updateVersion(db); 
+        updateVersion(db, MY_DEVICE_ID);
       })
       .catch(error => {
         toast({
@@ -214,9 +216,14 @@ export default function Home() {
   };
 
 
-   const onOpenChange = (open: boolean) => { 
+   const onOpenChange = (open: boolean) => {
     setSheetOpen(open);
   };
+
+  const currentDayStr = useMemo(() => {
+    const daysMap = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; // JS Sunday is 0
+    return daysMap[new Date().getDay()];
+  }, []);
 
 
   return (
@@ -250,7 +257,14 @@ export default function Home() {
                 <div className="flex flex-wrap gap-1.5 items-center justify-center">
                   {schedulesInGroup[0]?.days && schedulesInGroup[0].days.length > 0 ? (
                     schedulesInGroup[0].days.map(day => (
-                      <Badge key={day} variant="secondary" className="text-[0.9rem] rounded-full h-9 w-9 flex items-center justify-center p-0 bg-amarillo-100">
+                      <Badge
+                        key={day}
+                        className={`text-[0.9rem] rounded-full h-9 w-9 flex items-center justify-center p-0 ${
+                          day === currentDayStr
+                            ? 'bg-primary text-primary-foreground' // Highlight for current day
+                            : 'bg-amarillo-100 text-black' // Normal day style
+                        }`}
+                      >
                         {day.substring(0, 2)}
                       </Badge>
                     ))
@@ -298,6 +312,18 @@ export default function Home() {
           ))
         )}
       </div>
+       {/* Botón flotante solo en la página de inicio */}
+       {typeof window !== 'undefined' && window.location.pathname === '/' && (
+        <Link href="/nuevos-horarios" passHref>
+          <Button
+            className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 bg-primary hover:bg-primary/90"
+            size="icon"
+            title="Nuevo Horario"
+          >
+            <Plus className="h-7 w-7 text-primary-foreground" />
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
