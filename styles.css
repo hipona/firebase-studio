@@ -28,13 +28,8 @@ body {
   border-radius: 5px; /* Bordes redondeados */
 }
 .bg-amarillo-100{
-  background-color: #DFE456;
+  background-color: rgb(223, 228, 86);
 }
-
-bg-amarillo-200{
-  background-color: #DFE456;
-}
-
 /* Estado no seleccionado */
 .data-\[state\=unchecked\]\:bg-yelow[data-state="unchecked"] {
   --tw-bg-opacity: 1;
