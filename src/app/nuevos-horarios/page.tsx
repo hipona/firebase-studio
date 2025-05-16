@@ -37,11 +37,6 @@ import '../../../styles.css';
 import { CheckCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
-
-// Define MY_DEVICE_ID for now. This should be made dynamic in a real application.
-const MY_DEVICE_ID = 'ESP8266_001';
-
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -77,6 +72,29 @@ export default function NuevosHorariosPage() {
   );
   const [newStatus, setNewStatus] = useState<boolean>(true); // Estado para el status del nuevo horario
 
+  const updateVersion = async () => {
+    const versionRef = ref(db, 'version');
+    try {
+      const snapshot = await get(versionRef);
+      const currentVersion = snapshot.val();
+
+      let newVersion;
+      do {
+        newVersion = Math.floor(Math.random() * 9) + 1; // Genera un número entero entre 1 y 9
+      } while (newVersion === currentVersion); // Asegura que el nuevo número sea diferente del actual
+
+      await set(versionRef, newVersion); // Actualiza la versión en Firebase
+    } catch (error) {
+      console.error("Error updating version:", error);
+      // Optionally, inform the user about the error
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la versión del sistema.',
+        variant: 'destructive',
+      });
+    }
+  };
+
 
   const handleDayToggle = (day: string) => {
     setNewDays(prevDays =>
@@ -90,7 +108,7 @@ export default function NuevosHorariosPage() {
       return;
     }
 
-    const schedulesRef = ref(db, `${MY_DEVICE_ID}/horarios_config`);
+    const schedulesRef = ref(db, 'horarios');
     try {
       const snapshot = await get(schedulesRef);
       const existingSchedulesData = snapshot.val() || {};
@@ -123,7 +141,7 @@ export default function NuevosHorariosPage() {
 
 
       const nextId = await getNextScheduleId();
-      const newScheduleRef = ref(db, `${MY_DEVICE_ID}/horarios_config/${nextId}`);
+      const newScheduleRef = ref(db, `horarios/${nextId}`);
       await set(newScheduleRef, {
         time: newTime,
         days: newDays,
@@ -138,7 +156,7 @@ export default function NuevosHorariosPage() {
       setNewStatus(true); // Resetear el estado del radio button
 
       // Actualizar la versión en Firebase
-      await updateVersion(db);
+      await updateVersion();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -151,7 +169,7 @@ export default function NuevosHorariosPage() {
 
 
   const getNextScheduleId = async () => {
-    const schedulesRef = ref(db, `${MY_DEVICE_ID}/horarios_config`);
+    const schedulesRef = ref(db, 'horarios');
     const snapshot = await get(schedulesRef);
     const data = snapshot.val();
     if (!data) {

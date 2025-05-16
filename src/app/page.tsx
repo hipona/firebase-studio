@@ -38,8 +38,6 @@ import '../../styles.css'; // Importa el archivo CSS
 import {Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter} from '@/components/ui/sheet';
 import { updateVersion } from '@/lib/firebaseUtils'; // Import the utility function
 
-// Define MY_DEVICE_ID for now. This should be made dynamic in a real application.
-const MY_DEVICE_ID = 'ESP8266_001';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -85,13 +83,13 @@ export default function Home() {
 
 
   useEffect(() => {
-    const serviceStatusRef = ref(db, `${MY_DEVICE_ID}/current_status`);
+    const serviceStatusRef = ref(db, `current_status`);
     const unsubscribeStatus = onValue(serviceStatusRef, snapshot => {
       const status = snapshot.val();
       setServiceStatus(status);
     });
 
-    const schedulesRef = ref(db, `${MY_DEVICE_ID}/horarios_config`);
+    const schedulesRef = ref(db, `horarios`);
     const unsubscribeSchedules = onValue(schedulesRef, snapshot => {
       const data = snapshot.val();
       if (data) {
@@ -142,7 +140,7 @@ export default function Home() {
 
 
   const handleStatusToggle = (id: string, currentStatus: boolean) => {
-    const scheduleRef = ref(db, `${MY_DEVICE_ID}/horarios_config/${id}`);
+    const scheduleRef = ref(db, `horarios/${id}`);
     const schedule = schedules.find(s => s.id === id);
 
     if (schedule) {
@@ -156,7 +154,7 @@ export default function Home() {
                 title: 'Éxito',
                 description: 'Estado del horario actualizado correctamente.',
             });
-            updateVersion(db, MY_DEVICE_ID);
+            updateVersion(db);
         }).catch(error => {
             toast({
                 title: 'Error',
@@ -175,14 +173,14 @@ export default function Home() {
 
 
   const handleDeleteSchedule = (id: string) => {
-    const scheduleRef = ref(db, `${MY_DEVICE_ID}/horarios_config/${id}`);
+    const scheduleRef = ref(db, `horarios/${id}`);
     remove(scheduleRef)
       .then(() => {
         toast({
           title: 'Éxito',
           description: 'Horario eliminado exitosamente.',
         });
-        updateVersion(db, MY_DEVICE_ID);
+        updateVersion(db);
       })
       .catch(error => {
         toast({
@@ -197,14 +195,14 @@ export default function Home() {
     if (serviceStatus === null || !db) return;
 
     const newStatus = !serviceStatus;
-    const serviceStatusRef = ref(db, `${MY_DEVICE_ID}/current_status`);
+    const serviceStatusRef = ref(db, `status_arduino`);
     set(serviceStatusRef, newStatus)
       .then(() => {
         toast({
           title: 'Éxito',
           description: `Servicio ${newStatus ? 'activado' : 'desactivado'} correctamente.`,
         });
-        updateVersion(db, MY_DEVICE_ID);
+        updateVersion(db);
       })
       .catch(error => {
         toast({
@@ -312,18 +310,7 @@ export default function Home() {
           ))
         )}
       </div>
-       {/* Botón flotante solo en la página de inicio */}
-       {typeof window !== 'undefined' && window.location.pathname === '/' && (
-        <Link href="/nuevos-horarios" passHref>
-          <Button
-            className="fixed bottom-20 right-6 rounded-full shadow-lg z-20 h-14 w-14 p-0 transition-all duration-300 bg-primary hover:bg-primary/90"
-            size="icon"
-            title="Nuevo Horario"
-          >
-            <Plus className="h-7 w-7 text-primary-foreground" />
-          </Button>
-        </Link>
-      )}
+       
     </div>
   );
 }
