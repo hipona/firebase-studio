@@ -209,7 +209,7 @@ export default function DispositivosPage() {
       <h1 className="text-2xl font-bold mb-4">Dispositivos</h1>
       {dispositivos ? (
         Object.entries(dispositivos).map(([id, data]: [string, any]) => (
-          <Card key={id} className="mb-4">
+          <Card key={id} className="mb-4 dark:bg-secondary">
             <CardHeader>
               <CardTitle>{id}</CardTitle>
               <CardDescription>Detalles del dispositivo</CardDescription>
@@ -235,7 +235,7 @@ export default function DispositivosPage() {
       <h1 className="text-2xl font-bold mb-4">Eventos</h1>
       {eventos ? (
         Object.entries(eventos).map(([dispositivoId, eventosData]: [string, any]) => (
-          <Card key={dispositivoId} className="mb-4">
+          <Card key={dispositivoId} className="mb-4 dark:bg-secondary">
             <CardHeader>
               <CardTitle>Eventos de {dispositivoId}</CardTitle>
               <CardDescription>Historial de eventos</CardDescription>
@@ -243,7 +243,7 @@ export default function DispositivosPage() {
             <CardContent>
               <ul>
                 {Object.entries(eventosData).map(([eventoId, eventoData]: [string, any]) => (
-                  <EventItem
+                  <EventItem 
                     key={eventoId}
                     dispositivoId={dispositivoId}
                     eventoId={eventoId}
